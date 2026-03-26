@@ -1,0 +1,11 @@
+ID,errorCode,description,active,createdAt,createdBy,modifiedAt,modifiedBy
+32062204-b5b0-48a1-84d4-00dc7cfdd1c9,de-3206220,description-3206220,true,2007-03-31T00:00:00.000Z,createdBy.1wpxo@example.com,2002-04-10T00:00:00.000Z,modifiedBy.1wpxo@example.net
+3206221c-d537-4e3b-83da-d654eb730663,de-3206221,description-3206221,false,2002-10-08T00:00:00.000Z,createdBy.1wpxp@example.com,2001-10-07T00:00:00.000Z,modifiedBy.1wpxp@example.org
+32062223-9592-4344-b2da-fc009fe42bd0,de-3206222,description-3206222,true,2013-07-04T00:00:00.000Z,createdBy.1wpxq@example.org,2011-06-26T00:00:00.000Z,modifiedBy.1wpxq@example.com
+3206223e-6f2c-402c-8aeb-300ac4d42e15,de-3206223,description-3206223,false,2007-08-18T00:00:00.000Z,createdBy.1wpxr@example.com,2020-12-25T00:00:00.000Z,modifiedBy.1wpxr@example.net
+32062246-d5b9-4955-8038-9b260d6e7b00,de-3206224,description-3206224,true,2021-01-24T00:00:00.000Z,createdBy.1wpxs@example.net,2007-11-01T00:00:00.000Z,modifiedBy.1wpxs@example.net
+3206225f-6d72-4cb7-b5fc-4a9d2b59413b,de-3206225,description-3206225,false,2005-08-05T00:00:00.000Z,createdBy.1wpxt@example.org,2001-06-13T00:00:00.000Z,modifiedBy.1wpxt@example.com
+32062267-a625-483c-965e-4ca6a70fcb2d,de-3206226,description-3206226,true,2018-11-18T00:00:00.000Z,createdBy.1wpxu@example.com,2013-03-13T00:00:00.000Z,modifiedBy.1wpxu@example.com
+32062278-1b8a-4b34-af30-dc08dd3ff487,de-3206227,description-3206227,false,2008-09-02T00:00:00.000Z,createdBy.1wpxv@example.com,2010-01-26T00:00:00.000Z,modifiedBy.1wpxv@example.org
+3206228a-41ed-4df9-b561-24055ce9fae1,de-3206228,description-3206228,true,2000-06-15T00:00:00.000Z,createdBy.1wpxw@example.com,2018-03-20T00:00:00.000Z,modifiedBy.1wpxw@example.org
+3206229d-3950-49fd-8879-f1dd88a072bc,de-3206229,description-3206229,false,2015-08-11T00:00:00.000Z,createdBy.1wpxx@example.org,2014-01-16T00:00:00.000Z,modifiedBy.1wpxx@example.org

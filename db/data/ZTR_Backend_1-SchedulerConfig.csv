@@ -1,0 +1,11 @@
+ID,schedulerName,intervalHours,active,createdAt,createdBy,modifiedAt,modifiedBy
+22479055-3fc3-4c17-93f8-847992915da5,schedulerName-22479055,31,false,2023-08-27T00:00:00.000Z,createdBy.ddsy7@example.net,2002-05-11T00:00:00.000Z,modifiedBy.ddsy7@example.net
+22479056-d376-4ff3-982d-83bbc9e6e475,schedulerName-22479056,66,true,2017-06-02T00:00:00.000Z,createdBy.ddsy8@example.net,2006-08-02T00:00:00.000Z,modifiedBy.ddsy8@example.net
+22479057-fc20-4323-9bb6-2a694a74a775,schedulerName-22479057,94,false,2021-06-15T00:00:00.000Z,createdBy.ddsy9@example.net,2011-08-14T00:00:00.000Z,modifiedBy.ddsy9@example.com
+22479058-06a1-4e91-b06e-38b9c5282e9c,schedulerName-22479058,76,true,2023-12-06T00:00:00.000Z,createdBy.ddsya@example.net,2005-12-12T00:00:00.000Z,modifiedBy.ddsya@example.net
+22479059-9d99-4a24-b4b2-d1fc8f59b24d,schedulerName-22479059,80,false,2005-11-05T00:00:00.000Z,createdBy.ddsyb@example.org,2023-07-18T00:00:00.000Z,modifiedBy.ddsyb@example.com
+22479060-62ff-4c7c-94e4-fba50de5096e,schedulerName-22479060,36,true,2012-01-08T00:00:00.000Z,createdBy.ddsyc@example.org,2005-07-15T00:00:00.000Z,modifiedBy.ddsyc@example.net
+22479061-01f1-40c0-8eed-26f999a1dccf,schedulerName-22479061,79,false,2010-04-04T00:00:00.000Z,createdBy.ddsyd@example.com,2009-07-17T00:00:00.000Z,modifiedBy.ddsyd@example.org
+22479062-1ad9-4737-999a-e2871a2df27e,schedulerName-22479062,69,true,2019-08-28T00:00:00.000Z,createdBy.ddsye@example.org,2005-10-08T00:00:00.000Z,modifiedBy.ddsye@example.org
+22479063-d42f-4990-b752-dfb445ea1d48,schedulerName-22479063,87,false,2017-06-10T00:00:00.000Z,createdBy.ddsyf@example.org,2020-01-15T00:00:00.000Z,modifiedBy.ddsyf@example.com
+22479064-40bb-4232-acb9-8475b9e8810e,schedulerName-22479064,79,true,2010-08-01T00:00:00.000Z,createdBy.ddsyg@example.com,2003-11-19T00:00:00.000Z,modifiedBy.ddsyg@example.com

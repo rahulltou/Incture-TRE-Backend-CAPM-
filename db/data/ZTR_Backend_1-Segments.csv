@@ -1,0 +1,3 @@
+ID,parent_ID,segmentName,parentSegment,level,repeatable,createdAt,createdBy,modifiedAt,modifiedBy,validFrom,validTo
+22799558-2a44-4814-8f3b-88a083fc91f5,11494995-a920-4b74-a8de-3d28371b26e1,segmentName-22799558,parentSegment-22799558,16,true,2018-03-03T00:00:00.000Z,createdBy.dko92@example.com,2010-06-11T00:00:00.000Z,modifiedBy.dko92@example.net,2018-08-20T00:00:00.000Z,2019-05-25T00:00:00.000Z
+22799559-f8b8-4884-9308-32ffbb651184,11494995-a920-4b74-a8de-3d28371b26e1,segmentName-22799559,parentSegment-22799559,20,false,2008-12-16T00:00:00.000Z,createdBy.dko93@example.com,2023-12-07T00:00:00.000Z,modifiedBy.dko93@example.net,2013-04-29T00:00:00.000Z,2001-09-01T00:00:00.000Z

@@ -1,0 +1,252 @@
+_schema-version: 3.3.0
+ID: ZTRE_Backend_1
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: ZTRE_Backend_1-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: ZTRE_Backend_1-auth
+  - name: ZTRE_Backend_1-db
+  - name: ZTRE_Backend_1-connectivity
+  - name: ZTRE_Backend_1-destination
+  - name: ZTRE_Backend_1-logging
+  - name: ZTRE_Backend_1-auditlog
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+    instances: 1
+  build-parameters:
+    builder: npm-ci
+- name: ZTRE_Backend_1-mtx
+  type: nodejs
+  path: gen/mtx/sidecar
+  requires:
+  - name: ZTRE_Backend_1-auth
+  - name: ZTRE_Backend_1-db
+  - name: ZTRE_Backend_1-registry
+  - name: app-api
+    properties:
+      SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+  - name: ZTRE_Backend_1-destination
+  - name: ZTRE_Backend_1-html5-runtime
+  - name: ZTRE_Backend_1-html5-repo-host
+  - name: ZTRE_Backend_1-logging
+  provides:
+  - name: mtx-api
+    properties:
+      mtx-url: ${default-url}
+  parameters:
+    disk-quota: 512M
+    instances: 1
+    memory: 256M
+  build-parameters:
+    builder: npm-ci
+  hooks:
+  - name: upgrade-all
+    type: task
+    phases:
+    - blue-green.application.before-start.idle
+    - deploy.application.before-start
+    parameters:
+      command: cds-mtx upgrade '*'
+      disk-quota: 768M
+      memory: 512M
+      name: upgrade
+- name: ZTRE_Backend_1
+  type: approuter.nodejs
+  path: app/router
+  properties:
+    TENANT_HOST_PATTERN: ^(.*)-${default-uri}
+  requires:
+  - name: srv-api
+    group: destinations
+    properties:
+      forwardAuthToken: true
+      name: srv-api
+      url: ~{srv-url}
+  - name: mtx-api
+    group: destinations
+    properties:
+      name: mtx-api
+      url: ~{mtx-url}
+  - name: ZTRE_Backend_1-auth
+  - name: ZTRE_Backend_1-destination
+  - name: ZTRE_Backend_1-html5-runtime
+  - name: ZTRE_Backend_1-logging
+  provides:
+  - name: app-api
+    properties:
+      app-protocol: ${protocol}
+      app-uri: ${default-uri}
+  parameters:
+    disk-quota: 256M
+    keep-existing-routes: true
+    memory: 256M
+- name: ZTRE_Backend_1-app-deployer
+  type: com.sap.application.content
+  path: gen
+  requires:
+  - name: ZTRE_Backend_1-auth
+  - name: srv-api
+  - name: ZTRE_Backend_1-html5-repo-host
+    parameters:
+      config:
+        HTML5Runtime_enabled: true
+      content-target: true
+  build-parameters:
+    build-result: app/
+    requires:
+    - artifacts:
+      - nstremastermessagetremastermessagetype.zip
+      name: nstremastermessagetremastermessagetype
+      target-path: app/
+    - artifacts:
+      - nstremasterinbidocerrcodestremasterinbidocerrcodes.zip
+      name: nstremasterinbidocerrcodestremasterinbidocerrcodes
+      target-path: app/
+    - artifacts:
+      - nstremasterschedulertremasterscheduler.zip
+      name: nstremasterschedulertremasterscheduler
+      target-path: app/
+    - artifacts:
+      - nstremastermessagestremastermessagetypes.zip
+      name: nstremastermessagestremastermessagetypes
+      target-path: app/
+- name: nstremastermessagetremastermessagetype
+  type: html5
+  path: app/tre_master_message_type
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: nstremasterinbidocerrcodestremasterinbidocerrcodes
+  type: html5
+  path: app/tre_master_inb_idoc_errcodes
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: nstremasterschedulertremasterscheduler
+  type: html5
+  path: app/tre_master_scheduler
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: nstremastermessagestremastermessagetypes
+  type: html5
+  path: app/tre_master_message_types
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: ZTRE_Backend_1-auth
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      oauth2-configuration:
+        credential-types:
+        - binding-secret
+        - x509
+        redirect-uris:
+        - https://*~{app-api/app-uri}/**
+      tenant-mode: shared
+      xsappname: ZTRE_Backend_1-${org}-${space}
+    path: ./xs-security.json
+    service: xsuaa
+    service-plan: application
+  requires:
+  - name: app-api
+- name: ZTRE_Backend_1-db
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: service-manager
+    service-plan: container
+- name: ZTRE_Backend_1-registry
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      appName: ZTRE_Backend_1-${org}-${space}
+      appUrls:
+        callbackTimeoutMillis: 300000
+        getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
+        onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
+        onSubscriptionAsync: true
+        onUnSubscriptionAsync: true
+        onUpdateDependenciesAsync: true
+      category: Category
+      description: A simple CAP project.
+      displayName: ZTRE_Backend_1
+      xsappname: ZTRE_Backend_1-${org}-${space}
+    service: saas-registry
+    service-plan: application
+  requires:
+  - name: mtx-api
+- name: ZTRE_Backend_1-connectivity
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: connectivity
+    service-plan: lite
+- name: ZTRE_Backend_1-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: false
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+    service: destination
+    service-plan: lite
+- name: ZTRE_Backend_1-html5-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+- name: ZTRE_Backend_1-html5-runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: ZTRE_Backend_1-logging
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: application-logs
+    service-plan: standard
+- name: ZTRE_Backend_1-auditlog
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: auditlog
+    service-plan: premium
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm ci
+    - npx cds build --production

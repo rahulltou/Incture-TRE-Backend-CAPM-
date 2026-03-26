@@ -1,0 +1,3 @@
+ID,parent_ID,idocType,version,createdAt,createdBy,modifiedAt,modifiedBy,validFrom,validTo
+11494994-cd67-4023-9750-73aee72fcc9a,24334498-edbc-4f57-8164-be331ba4fd51,idocType-11494994,n-11494994,2007-12-20T00:00:00.000Z,createdBy.6udle@example.org,2023-04-25T00:00:00.000Z,modifiedBy.6udle@example.net,2018-02-16T00:00:00.000Z,2012-10-12T00:00:00.000Z
+11494995-a920-4b74-a8de-3d28371b26e1,24334498-edbc-4f57-8164-be331ba4fd51,idocType-11494995,n-11494995,2021-02-24T00:00:00.000Z,createdBy.6udlf@example.org,2001-11-14T00:00:00.000Z,modifiedBy.6udlf@example.net,2000-01-31T00:00:00.000Z,2019-11-27T00:00:00.000Z

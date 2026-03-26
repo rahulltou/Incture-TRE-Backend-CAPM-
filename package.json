@@ -1,0 +1,77 @@
+{
+  "name": "ZTRE_Backend_1",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "dependencies": {
+    "@cap-js/audit-logging": ">=0",
+    "@cap-js/hana": "^2",
+    "@sap-cloud-sdk/http-client": "^4.5.1",
+    "@sap/cds": "^9",
+    "@sap/cds-mtxs": "^3",
+    "@sap/xssec": "^4",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9",
+    "cds-plugin-ui5": "^0.13.0",
+    "mbt": "^1.2.29",
+    "rimraf": "^5.0.5"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch-tre_master_message_type": "cds watch --open nstremastermessage.tremastermessagetype/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "undeploy": "cf undeploy ZTRE_Backend_1 --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "watch-tre_master_inb_idoc_errcodes": "cds watch --open nstremasterinbidocerrcodes.tremasterinbidocerrcodes/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "watch-tre_master_scheduler": "cds watch --open nstremasterscheduler.tremasterscheduler/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "watch-tre_master_message_types": "cds watch --open nstremastermessages.tremastermessagetypes/index.html?sap-ui-xx-viewCache=false --livereload false"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "db": {
+        "[development]": {
+          "kind": "sqlite",
+          "credentials": {
+            "url": "db.sqlite"
+          }
+        },
+        "[production]": {
+          "kind": "hana"
+        }
+      },
+      "auth": {
+        "[development]": {
+          "kind": "dummy"
+        },
+        "[production]": {
+          "kind": "xsuaa"
+        }
+      },
+      "[production]": {
+        "auth": "xsuaa",
+        "multitenancy": true
+      },
+      "[with-mtx]": {
+        "multitenancy": true
+      },
+      "connectivity": true,
+      "destinations": true,
+      "html5-repo": true,
+      "application-logging": true
+    },
+    "profile": "with-mtx-sidecar"
+  },
+  "workspaces": [
+    "app/*"
+  ],
+  "sapux": [
+    "app/tre_master_message_type",
+    "app/tre_master_inb_idoc_errcodes",
+    "app/tre_master_scheduler",
+    "app/tre_master_message_types",
+    "app/tre_master_message_types"
+  ]
+}
