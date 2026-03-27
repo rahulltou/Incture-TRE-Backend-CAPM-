@@ -9,7 +9,9 @@
     "@sap/cds": "^9",
     "@sap/cds-mtxs": "^3",
     "@sap/xssec": "^4",
-    "express": "^4"
+    "express": "^4",
+    "@sap-cloud-sdk/connectivity": "^4",
+    "@sap-cloud-sdk/resilience": "^4"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
@@ -60,7 +62,11 @@
       "connectivity": true,
       "destinations": true,
       "html5-repo": true,
-      "application-logging": true
+      "application-logging": true,
+      "Corrected_Error_EDIDC": {
+        "kind": "odata-v2",
+        "model": "srv/external/Corrected_Error_EDIDC"
+      }
     },
     "profile": "with-mtx-sidecar"
   },

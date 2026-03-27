@@ -76,3 +76,26 @@ entity Fields : cuid, managed, temporal {
   endOffset    : Integer;
   valueHelp    : String(100);
 }
+
+
+/**
+ * Failed IDoc Header (EDIDC)
+ * Snapshot persisted from SAP
+ */
+entity FailedIdocHeaders : cuid, managed {
+
+  docnum       : String(16);      // EDIDC-DOCNUM
+  mestyp       : String(30);      // Message Type
+  idoctp       : String(30);      // IDoc Type
+  status       : String(2);       // Status (e.g. 51)
+
+  landscape    : String(50);      // SAP Product / Release (ECC / S4OP2021 / S4C)
+  systemAlias  : String(16);      // System ID + Client
+
+  createdOn    : Date;
+  createdTime  : Time;
+  sender       : String(30);
+  receiver     : String(30);
+
+  errorFlag    : Boolean default true;
+}
