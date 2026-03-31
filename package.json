@@ -65,7 +65,10 @@
       "application-logging": true,
       "Corrected_Error_EDIDC": {
         "kind": "odata-v2",
-        "model": "srv/external/Corrected_Error_EDIDC"
+        "model": "srv/external/Corrected_Error_EDIDC",
+        "[development]": {
+          "mock": true
+        }
       }
     },
     "profile": "with-mtx-sidecar"

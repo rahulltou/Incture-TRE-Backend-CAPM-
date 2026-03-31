@@ -1,0 +1,8 @@
+
+### Load Failed IDOC Headers
+POST http://localhost:4004/service/zTR_Backend_1/failed-idoc/loadFailedIdocHeaders
+
+### Get Failed IDOC Headers
+GET http://localhost:4004/service/zTR_Backend_1/failed-idoc/FailedIdocHeaders
+GET http://localhost:4004/service/zTR_Backend_1/failed-idoc/FailedIdocHeaders('<ID>')
+

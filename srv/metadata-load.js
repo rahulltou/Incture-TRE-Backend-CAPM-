@@ -213,6 +213,7 @@ module.exports = function (srv) {
                     INSERT.into(Segments).entries({
                         parent_ID: idoc.ID,
                         segmentName: s.SEGMENT,
+                        segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
                         parentSegment: s.PARENT_SEGMENT ?? '',
                         level: s.LEVEL ?? 1,
                         repeatable: s.REPEATABLE ?? true,

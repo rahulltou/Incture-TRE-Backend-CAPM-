@@ -54,6 +54,7 @@ entity IdocTypes : cuid, managed, temporal {
 entity Segments : cuid, managed, temporal {
   parent         : Association to IdocTypes;
   segmentName    : String(30);
+  segmentDescription  : String(255);
   parentSegment  : String(30);
   level          : Integer;
   repeatable     : Boolean default true;
