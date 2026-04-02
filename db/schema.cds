@@ -3,6 +3,29 @@ using { cuid, managed, temporal } from '@sap/cds/common';
 
 // @odata.draft.enabled
 
+
+//IDOC Type Definitions
+type EDIDC {
+  DOCNUM   : String(16);
+  MESTYP   : String(30);
+  IDOCTYP  : String(30);
+  DIRECT   : String(1);
+  RCVPRN   : String(10);
+  SNDPRN   : String(10);
+  STATUS   : String(2);
+}
+
+type EDIDD {
+  SEGNAM  : String(27);
+  HLEVEL  : Integer;
+  SDATA   : String(1000);
+}
+
+type IDocPayload {
+  CONTROL : EDIDC;
+  DATA    : many EDIDD;
+}
+
 // Master/Configurable Data
 entity MessageTypesForMetadata : cuid, managed {
   // sapLandscape : String(20);     // ECC, S4HANA
@@ -99,4 +122,26 @@ entity FailedIdocHeaders : cuid, managed {
   receiver     : String(30);
 
   errorFlag    : Boolean default true;
+}
+
+entity ReprocessHeaders : cuid, managed {
+  docnum            : String(16);
+  changedBy         : String(50);
+  changedAt         : Timestamp;
+
+  currentStatus     : String(20);   // IDOC status at submission time
+  reprocessStatus   : String(20);   // SUBMITTED / FAILED / SUCCESS
+  reprocessMessage  : String(255);
+
+  items             : Composition of many ReprocessItems
+                        on items.parent = $self;
+}
+
+entity ReprocessItems : cuid, managed {
+  parent      : Association to ReprocessHeaders;
+
+  segment     : String(30);
+  field       : String(30);
+  oldValue    : String(255);
+  newValue    : String(255);
 }
