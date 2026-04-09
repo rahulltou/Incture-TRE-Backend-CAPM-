@@ -2,9 +2,11 @@ const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 
 /* ----- Local test toggle ----- */
-const USE_MOCK_METADATA = process.env.USE_MOCK_METADATA === 'true';
+// const USE_MOCK_METADATA = process.env.USE_MOCK_METADATA === 'true';
 
 module.exports = function (srv) {
+
+    const { uuid } = cds.utils;
 
     const {
         MessageTypesForMetadata,
@@ -88,6 +90,8 @@ module.exports = function (srv) {
 
         let rows = [];
 
+        var USE_MOCK_METADATA = true;
+
         if (USE_MOCK_METADATA) {
             rows = getMockMetadata(messageType);
         } else {
@@ -170,65 +174,168 @@ module.exports = function (srv) {
             }));
     }
 
-    async function persistMetadata(tx, admin, rows) {
+    // async function persistMetadata(tx, admin, rows) {
 
+    //     let idocs = 0, segments = 0, fields = 0;
+
+    //     const msg = await tx.run(
+    //         INSERT.into(MessageTypes).entries({
+    //             sapLandscape: admin.sapLandscape,
+    //             systemAlias: admin.systemAlias,
+    //             messageType: admin.messageType,
+    //             description: admin.messageType,
+
+    //             validFrom: new Date(),
+    //             validTo: null
+    //         })
+    //     );
+
+    //     const grouped = {};
+    //     for (const r of rows) {
+    //         grouped[r.IDOCTYP] ??= [];
+    //         grouped[r.IDOCTYP].push(r);
+    //     }
+
+    //     for (const [idocType, segs] of Object.entries(grouped)) {
+    //         idocs++;
+
+    //         const idoc = await tx.run(
+    //             INSERT.into(IdocTypes).entries({
+    //                 parent_ID: msg.ID,
+    //                 idocType,
+    //                 version: '1',
+
+    //                 validFrom: new Date(),
+    //                 validTo: null
+    //             })
+    //         );
+
+    //         for (const s of segs) {
+    //             segments++;
+
+    //             const seg = await tx.run(
+    //                 INSERT.into(Segments).entries({
+    //                     parent_ID: idoc.ID,
+    //                     segmentName: s.SEGMENT,
+    //                     segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
+    //                     parentSegment: s.PARENT_SEGMENT ?? '',
+    //                     level: s.LEVEL ?? 1,
+    //                     repeatable: s.REPEATABLE ?? true,
+
+    //                     validFrom: new Date(),
+    //                     validTo: null
+    //                 })
+    //             );
+
+    //             for (const f of s.FIELDS ?? []) {
+    //                 fields++;
+
+    //                 await tx.run(
+    //                     INSERT.into(Fields).entries({
+    //                         parent_ID: seg.ID,
+    //                         fieldName: f.FIELDNAME,
+    //                         label: f.LABEL ?? f.FIELDNAME,
+    //                         dataType: f.DATATYPE ?? 'CHAR',
+    //                         length: f.LENGTH ?? 0,
+    //                         decimals: f.DECIMALS ?? 0,
+    //                         mandatory: !!f.MANDATORY,
+    //                         editable: true,
+    //                         visible: true,
+    //                         startOffset: f.OFFSET_FROM ?? null,
+    //                         endOffset: f.OFFSET_TO ?? null,
+    //                         valueHelp: f.VALUEHELP ?? null,
+
+    //                         validFrom: new Date(),
+    //                         validTo: null
+    //                     })
+    //                 );
+    //             }
+    //         }
+    //     }
+
+    //     return { idocTypes: idocs, segments, fields };
+    // }
+
+    async function persistMetadata(tx, admin, rows) {
         let idocs = 0, segments = 0, fields = 0;
 
-        const msg = await tx.run(
+        /* -------------------------------
+           1. Message Type (root)
+        -------------------------------- */
+        const messageTypeId = uuid();
+
+        await tx.run(
             INSERT.into(MessageTypes).entries({
+                ID: messageTypeId,                // explicit UUID
                 sapLandscape: admin.sapLandscape,
                 systemAlias: admin.systemAlias,
                 messageType: admin.messageType,
                 description: admin.messageType,
-
-                validFrom: new Date(),
+                validFrom: new Date('2000-01-01'),
                 validTo: null
             })
         );
 
+        /* -------------------------------
+           2. Group by IDOC type
+        -------------------------------- */
         const grouped = {};
         for (const r of rows) {
             grouped[r.IDOCTYP] ??= [];
             grouped[r.IDOCTYP].push(r);
         }
 
+        /* -------------------------------
+           3. IDOC Types
+        -------------------------------- */
         for (const [idocType, segs] of Object.entries(grouped)) {
             idocs++;
 
-            const idoc = await tx.run(
+            const idocTypeId = uuid();
+
+            await tx.run(
                 INSERT.into(IdocTypes).entries({
-                    parent_ID: msg.ID,
+                    ID: idocTypeId,                 // explicit UUID
+                    parent_ID: messageTypeId,
                     idocType,
                     version: '1',
-
-                    validFrom: new Date(),
+                    validFrom: new Date('2000-01-01'),
                     validTo: null
                 })
             );
 
+            /* -------------------------------
+               4. Segments
+            -------------------------------- */
             for (const s of segs) {
                 segments++;
 
-                const seg = await tx.run(
+                const segmentId = uuid();
+
+                await tx.run(
                     INSERT.into(Segments).entries({
-                        parent_ID: idoc.ID,
+                        ID: segmentId,                // explicit UUID
+                        parent_ID: idocTypeId,
                         segmentName: s.SEGMENT,
                         segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
-                        parentSegment: s.PARENT_SEGMENT ?? '',
+                        parentSegment: s.PARENT_SEGMENT ?? null,
                         level: s.LEVEL ?? 1,
                         repeatable: s.REPEATABLE ?? true,
-
                         validFrom: new Date(),
                         validTo: null
                     })
                 );
 
+                /* -------------------------------
+                   5. Fields
+                -------------------------------- */
                 for (const f of s.FIELDS ?? []) {
                     fields++;
 
                     await tx.run(
                         INSERT.into(Fields).entries({
-                            parent_ID: seg.ID,
+                            ID: uuid(),                 // explicit UUID
+                            parent_ID: segmentId,
                             fieldName: f.FIELDNAME,
                             label: f.LABEL ?? f.FIELDNAME,
                             dataType: f.DATATYPE ?? 'CHAR',
@@ -240,7 +347,6 @@ module.exports = function (srv) {
                             startOffset: f.OFFSET_FROM ?? null,
                             endOffset: f.OFFSET_TO ?? null,
                             valueHelp: f.VALUEHELP ?? null,
-
                             validFrom: new Date(),
                             validTo: null
                         })
@@ -254,6 +360,80 @@ module.exports = function (srv) {
 
     function getMockMetadata(messageType) {
         return [
+            // {
+            //     // IDOCTYP: 'MATMAS05',
+            //     IDOCTYP: `${messageType}05`,
+            //     SEGMENT: 'E1MARAM',
+            //     PARENT_SEGMENT: '',
+            //     LEVEL: 1,
+            //     REPEATABLE: false,
+            //     FIELDS: [
+            //         {
+            //             FIELDNAME: 'MATNR',
+            //             LABEL: 'Material Number',
+            //             DATATYPE: 'CHAR',
+            //             LENGTH: 18,
+            //             DECIMALS: 0,
+            //             MANDATORY: true,
+            //             OFFSET_FROM: 0,
+            //             OFFSET_TO: 17,
+            //             VALUEHELP: null
+            //         },
+            //         {
+            //             FIELDNAME: 'MBRSH',
+            //             LABEL: 'Industry Sector',
+            //             DATATYPE: 'CHAR',
+            //             LENGTH: 1,
+            //             DECIMALS: 0,
+            //             MANDATORY: true,
+            //             OFFSET_FROM: 18,
+            //             OFFSET_TO: 18,
+            //             VALUEHELP: null
+            //         },
+            //         {
+            //             FIELDNAME: 'MTART',
+            //             LABEL: 'Material Type',
+            //             DATATYPE: 'CHAR',
+            //             LENGTH: 4,
+            //             DECIMALS: 0,
+            //             MANDATORY: true,
+            //             OFFSET_FROM: 19,
+            //             OFFSET_TO: 22,
+            //             VALUEHELP: null
+            //         }
+            //     ]
+            // },
+            // {
+            //     IDOCTYP: `${messageType}05`,
+            //     SEGMENT: 'E1MAKTM',
+            //     PARENT_SEGMENT: 'E1MARAM',
+            //     LEVEL: 2,
+            //     REPEATABLE: true,
+            //     FIELDS: [
+            //         {
+            //             FIELDNAME: 'MAKTX',
+            //             LABEL: 'Material Description',
+            //             DATATYPE: 'CHAR',
+            //             LENGTH: 40,
+            //             DECIMALS: 0,
+            //             MANDATORY: true,
+            //             OFFSET_FROM: 0,
+            //             OFFSET_TO: 39,
+            //             VALUEHELP: null
+            //         },
+            //         {
+            //             FIELDNAME: 'SPRAS',
+            //             LABEL: 'Language Key',
+            //             DATATYPE: 'CHAR',
+            //             LENGTH: 1,
+            //             DECIMALS: 0,
+            //             MANDATORY: true,
+            //             OFFSET_FROM: 40,
+            //             OFFSET_TO: 40,
+            //             VALUEHELP: null
+            //         }
+            //     ]
+            // },
             {
                 IDOCTYP: `${messageType}05`,
                 SEGMENT: 'E1HEADER',
@@ -316,6 +496,7 @@ module.exports = function (srv) {
                     }
                 ]
             }
+
         ];
     }
 

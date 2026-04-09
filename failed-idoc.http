@@ -1,8 +1,44 @@
+### Get Metadata
+GET http://localhost:4004/service/zTR_Backend_1/metadata/MessageTypes
+
+### Expected Result
+# {
+#   "value": [
+#     {
+#       "ID": "...",
+#       "messageType": "MATMAS",
+#       "systemAlias": "S4HCLNT210",
+#       "sapLandscape": "S4-ONPREM-2023"
+#     },
+#     {
+#       "ID": "...",
+#       "messageType": "ORDERS",
+#       "systemAlias": "EC6CLNT800",
+#       "sapLandscape": "ECC-617"
+#     }
+#   ]
+# }
+
+GET http://localhost:4004/service/zTR_Backend_1/metadata/IdocTypes
+
+GET http://localhost:4004/service/zTR_Backend_1/metadata/Segments
+
+GET http://localhost:4004/service/zTR_Backend_1/metadata/Fields
+
 
 ### Load Failed IDOC Headers
 POST http://localhost:4004/service/zTR_Backend_1/failed-idoc/loadFailedIdocHeaders
 
 ### Get Failed IDOC Headers
 GET http://localhost:4004/service/zTR_Backend_1/failed-idoc/FailedIdocHeaders
-GET http://localhost:4004/service/zTR_Backend_1/failed-idoc/FailedIdocHeaders('<ID>')
+
+
+### Submit Re-Process Attempt
+POST http://localhost:4004/service/zTR_Backend_1/reprocess/submitReprocessAttempt
+
+### CPI to Update Re-Processed Result
+POST http://localhost:4004/service/zTR_Backend_1/reprocess/updateReprocessResult
+
+### Job to Setup and call Archival of Successful Re-Processed cases
+POST http://localhost:4004/service/zTR_Backend_1/reprocess/archiveReprocessed
 

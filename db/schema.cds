@@ -54,7 +54,8 @@ entity SchedulerConfig : cuid, managed {
 }
 
 // Metadata Staging
-entity MessageTypes : cuid, managed, temporal {
+// entity MessageTypes : cuid, managed, temporal {
+entity MessageTypes : cuid, managed {
   // @Capabilities.SearchRestrictions.Searchable : true
   sapLandscape : String(20);
   systemAlias  : String(30);
@@ -65,7 +66,8 @@ entity MessageTypes : cuid, managed, temporal {
                    on idocTypes.parent = $self;
 }
 
-entity IdocTypes : cuid, managed, temporal {
+// entity IdocTypes : cuid, managed, temporal {
+entity IdocTypes : cuid, managed {
   parent    : Association to MessageTypes;
   idocType  : String(30);
   version   : String(10);
@@ -74,7 +76,8 @@ entity IdocTypes : cuid, managed, temporal {
                 on segments.parent = $self;
 }
 
-entity Segments : cuid, managed, temporal {
+// entity Segments : cuid, managed, temporal {
+entity Segments : cuid, managed {
   parent         : Association to IdocTypes;
   segmentName    : String(30);
   segmentDescription  : String(255);
@@ -86,7 +89,8 @@ entity Segments : cuid, managed, temporal {
                      on fields.parent = $self;
 }
 
-entity Fields : cuid, managed, temporal {
+// entity Fields : cuid, managed, temporal {
+entity Fields : cuid, managed {
   parent       : Association to Segments;
   fieldName    : String(30);
   label        : String(255);

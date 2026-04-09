@@ -45,7 +45,9 @@ module.exports = cds.service.impl(async function () {
     --------------------------------------------- */
     let rows = [];
 
-    if (USE_MOCK_FAILED_IDOC) {
+    var USE_MOCK_FAILED_IDOC1 = true;
+    // if (USE_MOCK_FAILED_IDOC) {
+    if (USE_MOCK_FAILED_IDOC1) {
       rows = getMockEdidc();
     } else {
       const msgTypes = [...new Set(msgCfg.map(m => `'${m.messageType}'`))].join(',');

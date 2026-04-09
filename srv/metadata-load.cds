@@ -1,49 +1,49 @@
-using { ZTR_Backend_1 as my } from '../db/schema.cds';
+using {ZTR_Backend_1 as my} from '../db/schema.cds';
 // using from './service';
 
 // extend service tRE_Admin {
 @path: '/service/zTR_Backend_1/metadata'
 
 service tRE_Metadata {
-/* =======================================================
-     METADATA READ (STAGING TABLES)
-     ======================================================= */
+  /* =======================================================
+       METADATA READ (STAGING TABLES)
+       ======================================================= */
 
   @readonly
-//   @odata.draft.enabled: false
-//   @cds.persistence.skip
-  entity MessageTypes
-    as projection on my.MessageTypes;
+  //   @odata.draft.enabled: false
+  //   @cds.persistence.skip
+  @cds.temporal: false
+  entity MessageTypes as projection on my.MessageTypes;
 
   @readonly
-  entity IdocTypes
-    as projection on my.IdocTypes;
+  @cds.temporal: false
+  entity IdocTypes    as projection on my.IdocTypes;
 
   @readonly
-  entity Segments
-    as projection on my.Segments;
+  @cds.temporal: false
+  entity Segments     as projection on my.Segments;
 
   @readonly
-  entity Fields
-    as projection on my.Fields;
+  @cds.temporal: false
+  entity Fields       as projection on my.Fields;
 
-  // /**
-  //  * Load IDoc metadata for a given Message Type + System
-  //  * Behavior:
-  //  *  - active=true  & not loaded  → load
-  //  *  - active=true  & loaded      → skip
-  //  *  - active=false & loaded      → delete
-  //  */
-  // action loadMetadata(
-  //   messageType : String,
-  //   systemAlias : String
-  // ) returns {
-  //   messageType : String;
-  //   systemAlias : String;
-  //   status      : String;
-  //   idocTypes   : Integer;
-  //   segments    : Integer;
-  //   fields      : Integer;
-  // };
+// /**
+//  * Load IDoc metadata for a given Message Type + System
+//  * Behavior:
+//  *  - active=true  & not loaded  → load
+//  *  - active=true  & loaded      → skip
+//  *  - active=false & loaded      → delete
+//  */
+// action loadMetadata(
+//   messageType : String,
+//   systemAlias : String
+// ) returns {
+//   messageType : String;
+//   systemAlias : String;
+//   status      : String;
+//   idocTypes   : Integer;
+//   segments    : Integer;
+//   fields      : Integer;
+// };
 
 }
