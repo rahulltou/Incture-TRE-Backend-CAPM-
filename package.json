@@ -63,11 +63,25 @@
       "destinations": true,
       "html5-repo": true,
       "application-logging": true,
+      
       "Corrected_Error_EDIDC": {
         "kind": "odata-v2",
         "model": "srv/external/Corrected_Error_EDIDC",
         "[development]": {
           "mock": true
+        }
+      },
+      "ZIDOC_METADATA_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/ZIDOC_METADATA_SRV",
+        "[development]": {
+          "mock": true
+        },
+        "[production]": {
+          "credentials": {
+            "destination": "{destination-name}",
+            "path": "/sap/opu/odata/sap/ZIDOC_METADATA_SRV"
+          }
         }
       }
     },

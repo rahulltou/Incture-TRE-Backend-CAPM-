@@ -2,6 +2,7 @@ using {ZTR_Backend_1 as db} from '../db/schema.cds';
 using {Corrected_Error_EDIDC as ext} from './external/Corrected_Error_EDIDC.csn';
 
 @path: '/service/zTR_Backend_1/failed-idoc'
+@requires: 'TRE.EXECUTION.EXECUTE'
 service FailedIdocService {
 
   /**

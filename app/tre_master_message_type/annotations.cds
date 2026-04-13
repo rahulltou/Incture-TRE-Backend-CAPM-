@@ -11,7 +11,8 @@ annotate service.MessageTypesForMetadata with @(
             {
                 $Type : 'UI.DataField',
                 Value : systemAlias,
-                Label : 'systemAlias',
+                // Label : 'systemAlias',
+                 Label : 'Destination'
             },
             {
                 $Type : 'UI.DataField',
@@ -52,7 +53,8 @@ annotate service.MessageTypesForMetadata with @(
         {
             $Type : 'UI.DataField',
             Value : systemAlias,
-            Label : 'systemAlias',
+            // Label : 'systemAlias',
+            Label : 'Destination'
         },
         {
             $Type : 'UI.DataField',

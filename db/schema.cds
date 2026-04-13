@@ -16,8 +16,12 @@ type EDIDC {
 }
 
 type EDIDD {
-  SEGNAM  : String(27);
+  DOCNUM   : String(16);
+  SEGNUM  : String(6);
+  SEGNAM  : String(30);
+  PSGNUM  : String(6);
   HLEVEL  : Integer;
+  DTINT2  : String(5);
   SDATA   : String(1000);
 }
 
@@ -118,7 +122,7 @@ entity FailedIdocHeaders : cuid, managed {
   status       : String(2);       // Status (e.g. 51)
 
   landscape    : String(50);      // SAP Product / Release (ECC / S4OP2021 / S4C)
-  systemAlias  : String(16);      // System ID + Client
+  systemAlias  : String(16);      // BTP Destinations for SAP systems
 
   createdOn    : Date;
   createdTime  : Time;

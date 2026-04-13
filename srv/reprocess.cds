@@ -2,6 +2,7 @@ using {ZTR_Backend_1 as db} from '../db/schema.cds';
 
 /* ---------- Reprocess Service ---------- */
 @path: '/service/zTR_Backend_1/reprocess'
+@requires: 'TRE.EXECUTION.EXECUTE'
 service ReprocessService {
 
   /* Read-only history for UI */
@@ -14,7 +15,7 @@ service ReprocessService {
   /* UI submits IDOC + corrections */
   action submitReprocessAttempt(payload: db.IDocPayload,
                                 changedBy: String,
-
+                                systemAlias: String,
                                 changes: many {
     segment   : String;
     field     : String;
