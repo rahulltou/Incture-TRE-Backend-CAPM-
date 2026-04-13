@@ -1,14 +1,32 @@
 {
   "scopes": [
     {
-      "name": "$XSAPPNAME.mtcallback",
-      "description": "Subscription via SaaS Registry",
-      "grant-as-authority-to-apps": [
-        "$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"
-      ]
+      "name": "$XSAPPNAME.TRE.EXECUTION.EXECUTE",
+      "description": "TRE.EXECUTION.EXECUTE"
+    },
+    {
+      "name": "$XSAPPNAME.TRE.CONFIG.ADMIN",
+      "description": "TRE.CONFIG.ADMIN"
     }
   ],
   "attributes": [],
-  "role-templates": [],
+  "role-templates": [
+    {
+      "name": "TRE.EXECUTION.EXECUTE",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.TRE.EXECUTION.EXECUTE"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "TRE.CONFIG.ADMIN",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.TRE.CONFIG.ADMIN"
+      ],
+      "attribute-references": []
+    }
+  ],
   "authorities-inheritance": false
 }

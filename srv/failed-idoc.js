@@ -5,6 +5,7 @@ const cds = require('@sap/cds');
  *  - true  → mock EDIDC data (local dev)
  *  - false → real SAP OData via destination (CF)
  */
+
 const USE_MOCK_FAILED_IDOC =
   process.env.USE_MOCK_FAILED_IDOC === 'true';
 
@@ -18,9 +19,9 @@ module.exports = cds.service.impl(async function () {
 
   // Only connect when needed
   let edidcSrv = null;
-  if (!USE_MOCK_FAILED_IDOC) {
-    edidcSrv = await cds.connect.to('Corrected_Error_EDIDC');
-  }
+  // if (!USE_MOCK_FAILED_IDOC) {
+  //   edidcSrv = await cds.connect.to('Corrected_Error_EDIDC');
+  // }
 
   this.on('loadFailedIdocHeaders', async (req) => {
     const tx = cds.tx(req);
@@ -40,66 +41,88 @@ module.exports = cds.service.impl(async function () {
       return { loaded: 0, status: 'NO_CONFIG' };
     }
 
+    // 2. Group config by SystemAlias so we make ONE call per SAP System
+    const systems = [...new Set(msgCfg.map(m => m.systemAlias))];
+
     /* ---------------------------------------------
        2. Fetch EDIDC data
     --------------------------------------------- */
     let rows = [];
 
-    var USE_MOCK_FAILED_IDOC1 = true;
-    // if (USE_MOCK_FAILED_IDOC) {
-    if (USE_MOCK_FAILED_IDOC1) {
+    // var USE_MOCK_FAILED_IDOC1 = true;
+    if (USE_MOCK_FAILED_IDOC) {
+    // if (USE_MOCK_FAILED_IDOC1) {
       rows = getMockEdidc();
     } else {
-      const msgTypes = [...new Set(msgCfg.map(m => `'${m.messageType}'`))].join(',');
-      const errCodes = [...new Set(errCfg.map(e => `'${e.errorCode}'`))].join(',');
 
-      const sapQuery = SELECT.from(edidcSrv.entities.EDIDCSet)
-        .where(`
+      for (const sysAlias of systems) {
+        try {
+          // DYNAMIC CONNECTION: Connect to the destination named after the SysAlias
+          // const edidcSrv = await cds.connect.to(sysAlias);
+          const edidcSrv = await cds.connect.to(sysAlias, {
+            model: 'srv/external/Corrected_Error_EDIDC',
+            kind: 'odata-v2'
+          });
+
+          const msgTypes = [...new Set(msgCfg.map(m => `'${m.messageType}'`))].join(',');
+          const errCodes = [...new Set(errCfg.map(e => `'${e.errorCode}'`))].join(',');
+
+          const sapQuery = SELECT.from(edidcSrv.entities.EDIDCSet)
+            .where(`
           Mestyp in (${msgTypes})
           and Status in (${errCodes})
         `);
 
-      rows = await edidcSrv.run(sapQuery);
+          rows = await edidcSrv.run(sapQuery);
+          // }
+
+          /* ---------------------------------------------
+             3. Filter inside CAP by SysAlias + Landscape
+          --------------------------------------------- */
+          const validKeys = new Set(
+            msgCfg.map(
+              m => `${m.messageType}|${m.systemAlias}|${m.sapLandscape}`
+            )
+          );
+
+          const filteredRows = rows.filter(r =>
+            validKeys.has(`${r.Mestyp}|${r.SysAlias}|${r.Landscape}`)
+          );
+
+          /* ---------------------------------------------
+             4. Persist snapshot
+          --------------------------------------------- */
+          let count = 0;
+
+          for (const r of filteredRows) {
+            await tx.run(
+              INSERT.into(FailedIdocHeaders).entries({
+                docnum: r.Docnum,
+                mestyp: r.Mestyp,
+                idoctp: r.Idoctp,
+                status: r.Status,
+                landscape: r.Landscape,
+                // systemAlias: r.SysAlias,
+                systemAlias: sysAlias,
+                createdOn: r.Credat,
+                createdTime: r.Cretim,
+                sender: r.Sndprn,
+                receiver: r.Rcvprn,
+                errorFlag: true
+              })
+            );
+            count++;
+          }
+
+        } catch (err) {
+          console.error(`Failed to fetch from system ${sysAlias}:`, err.message);
+          // We continue the loop so one system failing doesn't stop others
+        }
+      }
+
+      return { loaded: count, status: 'SUCCESS' };
+
     }
-
-    /* ---------------------------------------------
-       3. Filter inside CAP by SysAlias + Landscape
-    --------------------------------------------- */
-    const validKeys = new Set(
-      msgCfg.map(
-        m => `${m.messageType}|${m.systemAlias}|${m.sapLandscape}`
-      )
-    );
-
-    const filteredRows = rows.filter(r =>
-      validKeys.has(`${r.Mestyp}|${r.SysAlias}|${r.Landscape}`)
-    );
-
-    /* ---------------------------------------------
-       4. Persist snapshot
-    --------------------------------------------- */
-    let count = 0;
-
-    for (const r of filteredRows) {
-      await tx.run(
-        INSERT.into(FailedIdocHeaders).entries({
-          docnum: r.Docnum,
-          mestyp: r.Mestyp,
-          idoctp: r.Idoctp,
-          status: r.Status,
-          landscape: r.Landscape,
-          systemAlias: r.SysAlias,
-          createdOn: r.Credat,
-          createdTime: r.Cretim,
-          sender: r.Sndprn,
-          receiver: r.Rcvprn,
-          errorFlag: true
-        })
-      );
-      count++;
-    }
-
-    return { loaded: count, status: 'SUCCESS' };
   });
 });
 

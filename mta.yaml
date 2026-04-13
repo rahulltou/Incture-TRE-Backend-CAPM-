@@ -22,46 +22,9 @@ modules:
     instances: 1
   build-parameters:
     builder: npm-ci
-- name: ZTRE_Backend_1-mtx
-  type: nodejs
-  path: gen/mtx/sidecar
-  requires:
-  - name: ZTRE_Backend_1-auth
-  - name: ZTRE_Backend_1-db
-  - name: ZTRE_Backend_1-registry
-  - name: app-api
-    properties:
-      SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
-  - name: ZTRE_Backend_1-destination
-  - name: ZTRE_Backend_1-html5-runtime
-  - name: ZTRE_Backend_1-html5-repo-host
-  - name: ZTRE_Backend_1-logging
-  provides:
-  - name: mtx-api
-    properties:
-      mtx-url: ${default-url}
-  parameters:
-    disk-quota: 512M
-    instances: 1
-    memory: 256M
-  build-parameters:
-    builder: npm-ci
-  hooks:
-  - name: upgrade-all
-    type: task
-    phases:
-    - blue-green.application.before-start.idle
-    - deploy.application.before-start
-    parameters:
-      command: cds-mtx upgrade '*'
-      disk-quota: 768M
-      memory: 512M
-      name: upgrade
 - name: ZTRE_Backend_1
   type: approuter.nodejs
   path: app/router
-  properties:
-    TENANT_HOST_PATTERN: ^(.*)-${default-uri}
   requires:
   - name: srv-api
     group: destinations
@@ -69,11 +32,6 @@ modules:
       forwardAuthToken: true
       name: srv-api
       url: ~{srv-url}
-  - name: mtx-api
-    group: destinations
-    properties:
-      name: mtx-api
-      url: ~{mtx-url}
   - name: ZTRE_Backend_1-auth
   - name: ZTRE_Backend_1-destination
   - name: ZTRE_Backend_1-html5-runtime
@@ -168,7 +126,7 @@ resources:
         - x509
         redirect-uris:
         - https://*~{app-api/app-uri}/**
-      tenant-mode: shared
+      tenant-mode: dedicated
       xsappname: ZTRE_Backend_1-${org}-${space}
     path: ./xs-security.json
     service: xsuaa
@@ -176,30 +134,10 @@ resources:
   requires:
   - name: app-api
 - name: ZTRE_Backend_1-db
-  type: org.cloudfoundry.managed-service
+  type: com.sap.xs.hdi-container
   parameters:
-    service: service-manager
-    service-plan: container
-- name: ZTRE_Backend_1-registry
-  type: org.cloudfoundry.managed-service
-  parameters:
-    config:
-      appName: ZTRE_Backend_1-${org}-${space}
-      appUrls:
-        callbackTimeoutMillis: 300000
-        getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
-        onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
-        onSubscriptionAsync: true
-        onUnSubscriptionAsync: true
-        onUpdateDependenciesAsync: true
-      category: Category
-      description: A simple CAP project.
-      displayName: ZTRE_Backend_1
-      xsappname: ZTRE_Backend_1-${org}-${space}
-    service: saas-registry
-    service-plan: application
-  requires:
-  - name: mtx-api
+    service: hana
+    service-plan: hdi-shared
 - name: ZTRE_Backend_1-connectivity
   type: org.cloudfoundry.managed-service
   parameters:
@@ -250,4 +188,3 @@ build-parameters:
     commands:
     - npm ci
     - npx cds build --production
-    

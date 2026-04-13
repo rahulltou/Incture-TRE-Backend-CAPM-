@@ -2,7 +2,7 @@ const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 
 /* ----- Local test toggle ----- */
-// const USE_MOCK_METADATA = process.env.USE_MOCK_METADATA === 'true';
+const USE_MOCK_METADATA = process.env.USE_MOCK_METADATA === 'true';
 
 module.exports = function (srv) {
 
@@ -67,10 +67,11 @@ module.exports = function (srv) {
         }
 
         /* 4. Resolve destination */
-        const destinationName =
-            admin.sapLandscape === 'ECC'
-                ? `ECC_IDOC_METADATA_${admin.systemAlias}`
-                : `S4_IDOC_METADATA_${admin.systemAlias}`;
+        // const destinationName =
+        //     admin.sapLandscape === 'ECC'
+        //         ? `ECC_IDOC_METADATA_${admin.systemAlias}`
+        //         : `S4_IDOC_METADATA_${admin.systemAlias}`;
+        const destinationName = admin.systemAlias;
 
         /* 5. Call Metadata OData */
 
@@ -90,20 +91,29 @@ module.exports = function (srv) {
 
         let rows = [];
 
-        var USE_MOCK_METADATA = true;
+        // var USE_MOCK_METADATA = true;
 
         if (USE_MOCK_METADATA) {
             rows = getMockMetadata(messageType);
         } else {
-            const response = await executeHttpRequest(
-                { destinationName },
-                {
-                    method: 'GET',
-                    url:
-                        `/sap/opu/odata/sap/Z_IDOC_META_SRV/GetMetadataSet` +
-                        `?$filter=MESTYP eq '${messageType}'`
-                }
-            );
+            try {
+                const response = await executeHttpRequest(
+                    { destinationName: destinationName },
+                    {
+                        method: 'GET',
+                        // url:
+                        //     `/sap/opu/odata/sap/Z_IDOC_META_SRV/GetMetadataSet` +
+                        //     `?$filter=MESTYP eq '${messageType}'`
+                        url: `/sap/opu/odata/sap/ZIDOC_METADATA_SRV/GetMetadataSet?$filter=Mestyp eq '${admin.messageType}'`,
+                        headers: { 'Content-Type': 'application/json' }
+                    }
+                );
+
+                const sapMetadata = response.data.d.results;
+                // ... proceed with your logic to save sapMetadata to local DB
+            } catch (error) {
+                req.error(500, `Failed to fetch from ${destinationName}: ${error.message}`);
+            }
             rows = response?.data?.d?.results ?? [];
         }
 
@@ -360,80 +370,80 @@ module.exports = function (srv) {
 
     function getMockMetadata(messageType) {
         return [
-            // {
-            //     // IDOCTYP: 'MATMAS05',
-            //     IDOCTYP: `${messageType}05`,
-            //     SEGMENT: 'E1MARAM',
-            //     PARENT_SEGMENT: '',
-            //     LEVEL: 1,
-            //     REPEATABLE: false,
-            //     FIELDS: [
-            //         {
-            //             FIELDNAME: 'MATNR',
-            //             LABEL: 'Material Number',
-            //             DATATYPE: 'CHAR',
-            //             LENGTH: 18,
-            //             DECIMALS: 0,
-            //             MANDATORY: true,
-            //             OFFSET_FROM: 0,
-            //             OFFSET_TO: 17,
-            //             VALUEHELP: null
-            //         },
-            //         {
-            //             FIELDNAME: 'MBRSH',
-            //             LABEL: 'Industry Sector',
-            //             DATATYPE: 'CHAR',
-            //             LENGTH: 1,
-            //             DECIMALS: 0,
-            //             MANDATORY: true,
-            //             OFFSET_FROM: 18,
-            //             OFFSET_TO: 18,
-            //             VALUEHELP: null
-            //         },
-            //         {
-            //             FIELDNAME: 'MTART',
-            //             LABEL: 'Material Type',
-            //             DATATYPE: 'CHAR',
-            //             LENGTH: 4,
-            //             DECIMALS: 0,
-            //             MANDATORY: true,
-            //             OFFSET_FROM: 19,
-            //             OFFSET_TO: 22,
-            //             VALUEHELP: null
-            //         }
-            //     ]
-            // },
-            // {
-            //     IDOCTYP: `${messageType}05`,
-            //     SEGMENT: 'E1MAKTM',
-            //     PARENT_SEGMENT: 'E1MARAM',
-            //     LEVEL: 2,
-            //     REPEATABLE: true,
-            //     FIELDS: [
-            //         {
-            //             FIELDNAME: 'MAKTX',
-            //             LABEL: 'Material Description',
-            //             DATATYPE: 'CHAR',
-            //             LENGTH: 40,
-            //             DECIMALS: 0,
-            //             MANDATORY: true,
-            //             OFFSET_FROM: 0,
-            //             OFFSET_TO: 39,
-            //             VALUEHELP: null
-            //         },
-            //         {
-            //             FIELDNAME: 'SPRAS',
-            //             LABEL: 'Language Key',
-            //             DATATYPE: 'CHAR',
-            //             LENGTH: 1,
-            //             DECIMALS: 0,
-            //             MANDATORY: true,
-            //             OFFSET_FROM: 40,
-            //             OFFSET_TO: 40,
-            //             VALUEHELP: null
-            //         }
-            //     ]
-            // },
+            {
+                // IDOCTYP: 'MATMAS05',
+                IDOCTYP: `${messageType}05`,
+                SEGMENT: 'E1MARAM',
+                PARENT_SEGMENT: '',
+                LEVEL: 1,
+                REPEATABLE: false,
+                FIELDS: [
+                    {
+                        FIELDNAME: 'MATNR',
+                        LABEL: 'Material Number',
+                        DATATYPE: 'CHAR',
+                        LENGTH: 18,
+                        DECIMALS: 0,
+                        MANDATORY: true,
+                        OFFSET_FROM: 0,
+                        OFFSET_TO: 17,
+                        VALUEHELP: null
+                    },
+                    {
+                        FIELDNAME: 'MBRSH',
+                        LABEL: 'Industry Sector',
+                        DATATYPE: 'CHAR',
+                        LENGTH: 1,
+                        DECIMALS: 0,
+                        MANDATORY: true,
+                        OFFSET_FROM: 18,
+                        OFFSET_TO: 18,
+                        VALUEHELP: null
+                    },
+                    {
+                        FIELDNAME: 'MTART',
+                        LABEL: 'Material Type',
+                        DATATYPE: 'CHAR',
+                        LENGTH: 4,
+                        DECIMALS: 0,
+                        MANDATORY: true,
+                        OFFSET_FROM: 19,
+                        OFFSET_TO: 22,
+                        VALUEHELP: null
+                    }
+                ]
+            },
+            {
+                IDOCTYP: `${messageType}05`,
+                SEGMENT: 'E1MAKTM',
+                PARENT_SEGMENT: 'E1MARAM',
+                LEVEL: 2,
+                REPEATABLE: true,
+                FIELDS: [
+                    {
+                        FIELDNAME: 'MAKTX',
+                        LABEL: 'Material Description',
+                        DATATYPE: 'CHAR',
+                        LENGTH: 40,
+                        DECIMALS: 0,
+                        MANDATORY: true,
+                        OFFSET_FROM: 0,
+                        OFFSET_TO: 39,
+                        VALUEHELP: null
+                    },
+                    {
+                        FIELDNAME: 'SPRAS',
+                        LABEL: 'Language Key',
+                        DATATYPE: 'CHAR',
+                        LENGTH: 1,
+                        DECIMALS: 0,
+                        MANDATORY: true,
+                        OFFSET_FROM: 40,
+                        OFFSET_TO: 40,
+                        VALUEHELP: null
+                    }
+                ]
+            },
             {
                 IDOCTYP: `${messageType}05`,
                 SEGMENT: 'E1HEADER',

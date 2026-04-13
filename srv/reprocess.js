@@ -16,7 +16,7 @@ module.exports = cds.service.impl(function () {
      * - Call CPI with IDOC + changes
      */
     this.on('submitReprocessAttempt', async (req) => {
-        const { payload, changedBy, changes } = req.data;
+        const { payload, changedBy, systemAlias, changes } = req.data;
         const tx = cds.tx(req);
 
         const { CONTROL } = payload;
@@ -51,22 +51,60 @@ module.exports = cds.service.impl(function () {
             );
         }
 
+        const destination = systemAlias;
         /* 3. Call CPI (EDIDC + EDIDD + changes) */
         const cpiPayload = {
             // attemptId: header.ID,
             attemptId: attemptId,
+            destination: destination,
             idoc: payload
             // changes
         };
 
-        await executeHttpRequest(
-            { destinationName: 'CPI_REPROCESS_IDOC' },
-            {
-                method: 'POST',
-                data: cpiPayload,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+    /* Mock Payload for CPI to Re-Process */
+        //         {
+        //   "attemptId": "9b99ab1f-35fc-4e88-bd5b-4d05f7c2d001",
+
+        //   "payload": {
+        //     "CONTROL": {
+        //       "DOCNUM": "000000000000000001",
+        //       "MESTYP": "MATMAS",
+        //       "IDOCTYP": "MATMAS05",
+        //       "DIRECT": "2",
+        //       "RCVPRN": "ERPCLNT",
+        //       "SNDPRN": "LSYSTEM",
+        //       "STATUS": "51"
+        //     },
+        //     "DATA": [
+        //       {
+        //         "SEGNAM": "E1MARAM",
+        //         "HLEVEL": 1,
+        //         "SDATA": "MATNR=MAT001;MBRSH=M;MTART=FERT"
+        //       },
+        //       {
+        //         "SEGNAM": "E1MAKTM",
+        //         "HLEVEL": 2,
+        //         "SDATA": "SPRAS=E;MAKTX=New Material Description"
+        //       }
+        //     ]
+        //   }
+        // }
+
+        try {
+            await executeHttpRequest(
+                // { destinationName: 'CPI_REPROCESS_IDOC' },
+                { destinationName: 'CPI_IFLOW_DEST' }, // Use a logical name
+                {
+                    method: 'POST',
+                    url: '/http/ZTRE/IDOC/Reprocess', // Relative path from CPI iFlow
+                    data: cpiPayload,
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+            // return { status: 'SUCCESS', message: 'Forwarded to CPI' };
+        } catch (error) {
+            req.error(500, `CPI Communication Failed: ${err.message}`);
+        }
 
         return {
             attemptId: header.ID,
@@ -235,7 +273,7 @@ module.exports = cds.service.impl(function () {
 
     //     const reprocessStatus = errorCode ? 'FAILED' : 'SUCCESS';
     // const currentStatus = idocStatus;
-        
+
     //     /* Update attempt */
     //     await tx.run(
     //         UPDATE(ReprocessHeaders)
