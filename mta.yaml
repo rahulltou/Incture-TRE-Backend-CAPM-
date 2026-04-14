@@ -134,7 +134,7 @@ resources:
   requires:
   - name: app-api
 - name: ZTRE_Backend_1-db
-  type: com.sap.xs.hdi-container
+  type: org.cloudfoundry.managed-service
   parameters:
     service: hana
     service-plan: hdi-shared
