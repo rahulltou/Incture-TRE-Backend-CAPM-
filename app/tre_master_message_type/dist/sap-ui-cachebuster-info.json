@@ -1,0 +1,16 @@
+{
+  "manifest.json": 1775169859295,
+  "Component.js": 1775169859295,
+  "ext/controller/MessageTypesForMetadataList.js": 1775169859295,
+  "i18n/i18n.properties": 1775169859295,
+  "ext/controller/loadMetaData1.js": 1775169859295,
+  "Component-dbg.js": 1775169859295,
+  "Component.js.map": 1776129986281,
+  "ext/controller/MessageTypesForMetadataList-dbg.js": 1775169859295,
+  "ext/controller/MessageTypesForMetadataList.js.map": 1776129986286,
+  "ext/controller/loadMetaData1-dbg.js": 1775169859295,
+  "ext/controller/loadMetaData1.js.map": 1776129986286,
+  "Component-preload.js": 1776129986356,
+  "Component-preload.js.map": 1776129986356,
+  "index.html": 1775169859295
+}

@@ -11,8 +11,8 @@ modules:
   - name: ZTRE_Backend_1-db
   - name: ZTRE_Backend_1-connectivity
   - name: ZTRE_Backend_1-destination
-  - name: ZTRE_Backend_1-logging
-  - name: ZTRE_Backend_1-auditlog
+  # - name: ZTRE_Backend_1-logging
+  # - name: ZTRE_Backend_1-auditlog
   provides:
   - name: srv-api
     properties:
@@ -35,7 +35,7 @@ modules:
   - name: ZTRE_Backend_1-auth
   - name: ZTRE_Backend_1-destination
   - name: ZTRE_Backend_1-html5-runtime
-  - name: ZTRE_Backend_1-logging
+  # - name: ZTRE_Backend_1-logging
   provides:
   - name: app-api
     properties:
@@ -169,16 +169,16 @@ resources:
   parameters:
     service: html5-apps-repo
     service-plan: app-runtime
-- name: ZTRE_Backend_1-logging
-  type: org.cloudfoundry.managed-service
-  parameters:
-    service: application-logs
-    service-plan: standard
-- name: ZTRE_Backend_1-auditlog
-  type: org.cloudfoundry.managed-service
-  parameters:
-    service: auditlog
-    service-plan: premium
+# - name: ZTRE_Backend_1-logging
+#   type: org.cloudfoundry.managed-service
+#   parameters:
+#     service: application-logs
+#     service-plan: standard
+# - name: ZTRE_Backend_1-auditlog
+#   type: org.cloudfoundry.managed-service
+#   parameters:
+#     service: auditlog
+#     service-plan: premium
 parameters:
   deploy_mode: html5-repo
   enable-parallel-deployments: true
