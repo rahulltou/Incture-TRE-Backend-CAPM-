@@ -107,7 +107,7 @@ modules:
     supported-platforms: []
 - name: nstremastermessagestremastermessagetypes
   type: html5
-  path: app/tre_master_message_types
+  path: app/tre_master_message_type
   build-parameters:
     build-result: dist
     builder: custom
