@@ -1,28 +1,33 @@
 namespace ZTR_Backend_1;
-using { cuid, managed, temporal } from '@sap/cds/common';
+
+using {
+  cuid,
+  managed,
+  temporal
+} from '@sap/cds/common';
 
 // @odata.draft.enabled
 
 
 //IDOC Type Definitions
 type EDIDC {
-  DOCNUM   : String(16);
-  MESTYP   : String(30);
-  IDOCTYP  : String(30);
-  DIRECT   : String(1);
-  RCVPRN   : String(10);
-  SNDPRN   : String(10);
-  STATUS   : String(2);
+  DOCNUM  : String(16);
+  MESTYP  : String(30);
+  IDOCTYP : String(30);
+  DIRECT  : String(1);
+  RCVPRN  : String(10);
+  SNDPRN  : String(10);
+  STATUS  : String(2);
 }
 
 type EDIDD {
-  DOCNUM   : String(16);
-  SEGNUM  : String(6);
-  SEGNAM  : String(30);
-  PSGNUM  : String(6);
-  HLEVEL  : Integer;
-  DTINT2  : String(5);
-  SDATA   : String(1000);
+  DOCNUM : String(16);
+  SEGNUM : String(6);
+  SEGNAM : String(30);
+  PSGNUM : String(6);
+  HLEVEL : Integer;
+  DTINT2 : String(5);
+  SDATA  : String(1000);
 }
 
 type IDocPayload {
@@ -33,27 +38,27 @@ type IDocPayload {
 // Master/Configurable Data
 entity MessageTypesForMetadata : cuid, managed {
   // sapLandscape : String(20);     // ECC, S4HANA
-  sapLandscape : String(20) default 'S4HANA';
-  systemAlias  : String(30);          // e.g. S4_DEV, ECC_QA
-  messageType  : String(30);
-  active       : Boolean default true;
+  sapLandscape   : String(20) default 'S4HANA';
+  systemAlias    : String(30); // e.g. S4_DEV, ECC_QA
+  messageType    : String(30);
+  active         : Boolean default true;
 
-  
+
   metadataLoaded : Boolean default false;
   lastLoadedAt   : Timestamp;
 }
 
 entity ErrorCodes : cuid, managed {
   // errorCode    : String(10); // IDOC Error Codes
-  errorCode    : String(10) default '51';
-  description  : String(255);
-  active       : Boolean default true;
+  errorCode   : String(10) default '51';
+  description : String(255);
+  active      : Boolean default true;
 }
 
 entity SchedulerConfig : cuid, managed {
   // schedulerName : String(30);   // e.g. Scheduler_1
   schedulerName : String(30) default '2';
-  intervalHours : Integer;      // Whole number only
+  intervalHours : Integer; // Whole number only
   active        : Boolean default true;
 }
 
@@ -72,41 +77,45 @@ entity MessageTypes : cuid, managed {
 
 // entity IdocTypes : cuid, managed, temporal {
 entity IdocTypes : cuid, managed {
-  parent    : Association to MessageTypes;
-  idocType  : String(30);
-  version   : String(10);
+  parent      : Association to MessageTypes;
+  idocType    : String(30);
+  description : String(255);
+  version     : String(10);
 
-  segments  : Composition of many Segments
-                on segments.parent = $self;
+  segments    : Composition of many Segments
+                  on segments.parent = $self;
 }
 
 // entity Segments : cuid, managed, temporal {
 entity Segments : cuid, managed {
-  parent         : Association to IdocTypes;
-  segmentName    : String(30);
-  segmentDescription  : String(255);
-  parentSegment  : String(30);
-  level          : Integer;
-  repeatable     : Boolean default true;
+  parent             : Association to IdocTypes;
+  segmentName        : String(30);
+  segmentDescription : String(255);
+  parentSegment      : String(30);
+  level              : Integer;
+  repeatable         : Boolean default true;
+  ParentSegNum       : String;
+  SegMustFlg         : Boolean;
+  SegOccmax          : String;
 
-  fields         : Composition of many Fields
-                     on fields.parent = $self;
+  fields             : Composition of many Fields
+                         on fields.parent = $self;
 }
 
 // entity Fields : cuid, managed, temporal {
 entity Fields : cuid, managed {
-  parent       : Association to Segments;
-  fieldName    : String(30);
-  label        : String(255);
-  dataType     : String(10);
-  length       : Integer;
-  decimals     : Integer default 0;
-  mandatory    : Boolean default false;
-  editable     : Boolean default true;
-  visible      : Boolean default true;
-  startOffset  : Integer;
-  endOffset    : Integer;
-  valueHelp    : String(100);
+  parent      : Association to Segments;
+  fieldName   : String(30);
+  label       : String(255);
+  dataType    : String(10);
+  length      : Integer;
+  decimals    : Integer default 0;
+  mandatory   : Boolean default false;
+  editable    : Boolean default true;
+  visible     : Boolean default true;
+  startOffset : Integer;
+  endOffset   : Integer;
+  valueHelp   : String(100);
 }
 
 
@@ -116,40 +125,40 @@ entity Fields : cuid, managed {
  */
 entity FailedIdocHeaders : cuid, managed {
 
-  docnum       : String(16);      // EDIDC-DOCNUM
-  mestyp       : String(30);      // Message Type
-  idoctp       : String(30);      // IDoc Type
-  status       : String(2);       // Status (e.g. 51)
+  docnum      : String(16); // EDIDC-DOCNUM
+  mestyp      : String(30); // Message Type
+  idoctp      : String(30); // IDoc Type
+  status      : String(2); // Status (e.g. 51)
 
-  landscape    : String(50);      // SAP Product / Release (ECC / S4OP2021 / S4C)
-  systemAlias  : String(16);      // BTP Destinations for SAP systems
+  landscape   : String(50); // SAP Product / Release (ECC / S4OP2021 / S4C)
+  systemAlias : String(16); // BTP Destinations for SAP systems
 
-  createdOn    : Date;
-  createdTime  : Time;
-  sender       : String(30);
-  receiver     : String(30);
+  createdOn   : Date;
+  createdTime : Time;
+  sender      : String(30);
+  receiver    : String(30);
 
-  errorFlag    : Boolean default true;
+  errorFlag   : Boolean default true;
 }
 
 entity ReprocessHeaders : cuid, managed {
-  docnum            : String(16);
-  changedBy         : String(50);
-  changedAt         : Timestamp;
+  docnum           : String(16);
+  changedBy        : String(50);
+  changedAt        : Timestamp;
 
-  currentStatus     : String(20);   // IDOC status at submission time
-  reprocessStatus   : String(20);   // SUBMITTED / FAILED / SUCCESS
-  reprocessMessage  : String(255);
+  currentStatus    : String(20); // IDOC status at submission time
+  reprocessStatus  : String(20); // SUBMITTED / FAILED / RE-PROCESSED
+  reprocessMessage : String(255);
 
-  items             : Composition of many ReprocessItems
-                        on items.parent = $self;
+  items            : Composition of many ReprocessItems
+                       on items.parent = $self;
 }
 
 entity ReprocessItems : cuid, managed {
-  parent      : Association to ReprocessHeaders;
+  parent   : Association to ReprocessHeaders;
 
-  segment     : String(30);
-  field       : String(30);
-  oldValue    : String(255);
-  newValue    : String(255);
+  segment  : String(30);
+  field    : String(30);
+  oldValue : String(255);
+  newValue : String(255);
 }

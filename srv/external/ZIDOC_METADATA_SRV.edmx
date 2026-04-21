@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:sap="http://www.sap.com/Protocols/SAPData">
+  <edmx:DataServices m:DataServiceVersion="2.0">
+    <Schema Namespace="ZIDOC_ERROR_REPROCESSING_SRV" xml:lang="en" sap:schema-version="1" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+      <EntityType Name="EDIDC" sap:content-version="1">
+        <Key>
+          <PropertyRef Name="Docnum"/>
+        </Key>
+        <Property Name="Landscape" Type="Edm.String" Nullable="false" MaxLength="50" sap:unicode="false" sap:label="System Landscape Rel" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="SysAlias" Type="Edm.String" Nullable="false" MaxLength="16" sap:unicode="false" sap:label="System Alias" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Docnum" Type="Edm.String" Nullable="false" MaxLength="16" sap:unicode="false" sap:label="IDoc number" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Docrel" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="SAP Release" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Status" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="IDoc Status" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Doctyp" Type="Edm.String" Nullable="false" MaxLength="8" sap:unicode="false" sap:label="IDoc Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Direct" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Direction" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvpor" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Receiver port" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvprt" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Partner Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvprn" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Receiver" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvsad" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="SADR recipient" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvsmn" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR rec.client" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvsna" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="SADR int.addr." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvsca" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR comm.type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvsdf" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Default flag" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvslf" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR SeqNo.Rec." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvlad" Type="Edm.String" Nullable="false" MaxLength="70" sap:unicode="false" sap:label="Recipient" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Std" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Standard" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Stdvrs" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="EDI std vers." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Stdmes" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="Message type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Mescod" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="Message Variant" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Mesfct" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="Mess. function" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Outmod" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Output Mode" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Test" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Test Flag" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndpor" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Sender port" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndprt" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Sender type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndprn" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Sender" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndsad" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="SADR sender" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndsmn" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR sdr client" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndsna" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="SADR intnl" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndsca" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR comm.type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndsdf" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Default flag" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndslf" Type="Edm.String" Nullable="false" MaxLength="3" sap:unicode="false" sap:label="SADR seq.no." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndlad" Type="Edm.String" Nullable="false" MaxLength="70" sap:unicode="false" sap:label="Sender" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Refint" Type="Edm.String" Nullable="false" MaxLength="14" sap:unicode="false" sap:label="Interchange File" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Refgrp" Type="Edm.String" Nullable="false" MaxLength="14" sap:unicode="false" sap:label="Message Group" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Refmes" Type="Edm.String" Nullable="false" MaxLength="14" sap:unicode="false" sap:label="Message" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Arckey" Type="Edm.String" Nullable="false" MaxLength="70" sap:unicode="false" sap:label="Archive Key" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Credat" Type="Edm.DateTime" Nullable="false" Precision="7" sap:unicode="false" sap:label="Created On" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Cretim" Type="Edm.Time" Nullable="false" Precision="0" sap:unicode="false" sap:label="Created at" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Mestyp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Message Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Idoctp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Basic type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Cimtyp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Extension" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Rcvpfc" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Function" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sndpfc" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Partner Role" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Serial" Type="Edm.String" Nullable="false" MaxLength="20" sap:unicode="false" sap:label="Serialization" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Exprss" Type="Edm.String" Nullable="false" MaxLength="1" sap:unicode="false" sap:label="Express" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Upddat" Type="Edm.DateTime" Nullable="false" Precision="7" sap:unicode="false" sap:label="Changed On" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Updtim" Type="Edm.Time" Nullable="false" Precision="0" sap:unicode="false" sap:label="Time changed" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Maxsegnum" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="No.data recrds" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+      </EntityType>
+      <EntityType Name="EDIDD" sap:content-version="1">
+        <Key>
+          <PropertyRef Name="Docnum"/>
+        </Key>
+        <Property Name="Docnum" Type="Edm.String" Nullable="false" MaxLength="16" sap:unicode="false" sap:label="IDoc number" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Segnum" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="Segment No." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Segnam" Type="Edm.String" Nullable="false" MaxLength="27" sap:unicode="false" sap:label="Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Psgnum" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="No. parent seg." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Hlevel" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Hier.level" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Dtint2" Type="Edm.Int16" Nullable="false" sap:unicode="false" sap:label="Length" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Sdata" Type="Edm.String" Nullable="false" MaxLength="1000" sap:unicode="false" sap:label="Appl.data" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Status" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="IDoc Status" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Credat" Type="Edm.DateTime" Nullable="false" Precision="7" sap:unicode="false" sap:label="Created On" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Mestyp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Message Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+      </EntityType>
+      <EntityType Name="Fields" sap:content-version="1">
+        <Key>
+          <PropertyRef Name="Fieldname"/>
+          <PropertyRef Name="Segment"/>
+        </Key>
+        <Property Name="Fieldname" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Field Name" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Signflag" Type="Edm.Boolean" Nullable="false" sap:unicode="false" sap:label="Boolean Variable (X = True, - = False, Space = Unknown)" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Segment" Type="Edm.String" Nullable="false" MaxLength="27" sap:unicode="false" sap:label="Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Label" Type="Edm.String" Nullable="false" MaxLength="132" sap:unicode="false" sap:label="Segment Description" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Datatype" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Data Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Length" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="No. of Characters" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Decimals" Type="Edm.String" Nullable="false" MaxLength="6" sap:unicode="false" sap:label="Decimal Places" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Offset" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Offset" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Valuehelp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Value table" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+      </EntityType>
+      <EntityType Name="MESTYPINFO" sap:content-version="1">
+        <Key>
+          <PropertyRef Name="Segment"/>
+        </Key>
+        <Property Name="Mestyp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Message Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="MestypDesc" Type="Edm.String" Nullable="false" MaxLength="132" sap:unicode="false" sap:label="Message Type Desc" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="ParentSegNum" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Parent seg. no." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Idoctyp" Type="Edm.String" Nullable="false" MaxLength="30" sap:unicode="false" sap:label="Basic type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="IdoctypDesc" Type="Edm.String" Nullable="false" MaxLength="132" sap:unicode="false" sap:label="Idoc Type Descrip" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="ParentSegFlg" Type="Edm.Boolean" Nullable="false" sap:unicode="false" sap:label="Parent segment?" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Segment" Type="Edm.String" Nullable="false" MaxLength="27" sap:unicode="false" sap:label="Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="SegMustFlg" Type="Edm.Boolean" Nullable="false" sap:unicode="false" sap:label="Mandatory" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="SegDescrp" Type="Edm.String" Nullable="false" MaxLength="132" sap:unicode="false" sap:label="Segment Description" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="SegOccmax" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Max. number" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="ParentSegment" Type="Edm.String" Nullable="false" MaxLength="27" sap:unicode="false" sap:label="Type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Level" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Hier.level" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <Property Name="Repeatable" Type="Edm.Boolean" Nullable="false" sap:unicode="false" sap:label="Boolean Variable (X = True, - = False, Space = Unknown)" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+        <NavigationProperty Name="ToFields" Relationship="ZIDOC_ERROR_REPROCESSING_SRV.MestypeInfo_Fields" FromRole="FromRole_MestypeInfo_Fields" ToRole="ToRole_MestypeInfo_Fields"/>
+      </EntityType>
+      <Association Name="MestypeInfo_Fields" sap:content-version="1">
+        <End Type="ZIDOC_ERROR_REPROCESSING_SRV.MESTYPINFO" Multiplicity="*" Role="FromRole_MestypeInfo_Fields"/>
+        <End Type="ZIDOC_ERROR_REPROCESSING_SRV.Fields" Multiplicity="*" Role="ToRole_MestypeInfo_Fields"/>
+        <ReferentialConstraint>
+          <Principal Role="FromRole_MestypeInfo_Fields">
+            <PropertyRef Name="Segment"/>
+          </Principal>
+          <Dependent Role="ToRole_MestypeInfo_Fields">
+            <PropertyRef Name="Segment"/>
+          </Dependent>
+        </ReferentialConstraint>
+      </Association>
+      <EntityContainer Name="ZIDOC_ERROR_REPROCESSING_SRV_Entities" m:IsDefaultEntityContainer="true" sap:supported-formats="atom json xlsx">
+        <EntitySet Name="EDIDCSet" EntityType="ZIDOC_ERROR_REPROCESSING_SRV.EDIDC" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1"/>
+        <EntitySet Name="EDIDDSet" EntityType="ZIDOC_ERROR_REPROCESSING_SRV.EDIDD" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
+        <EntitySet Name="FieldsSet" EntityType="ZIDOC_ERROR_REPROCESSING_SRV.Fields" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
+        <EntitySet Name="MESTYPINFOSet" EntityType="ZIDOC_ERROR_REPROCESSING_SRV.MESTYPINFO" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
+        <AssociationSet Name="MestypeInfo_FieldsSet" Association="ZIDOC_ERROR_REPROCESSING_SRV.MestypeInfo_Fields" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1">
+          <End EntitySet="MESTYPINFOSet" Role="FromRole_MestypeInfo_Fields"/>
+          <End EntitySet="FieldsSet" Role="ToRole_MestypeInfo_Fields"/>
+        </AssociationSet>
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

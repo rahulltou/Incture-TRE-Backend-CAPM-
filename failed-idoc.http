@@ -21,7 +21,9 @@ GET http://localhost:4004/service/zTR_Backend_1/metadata/MessageTypes
 
 GET http://localhost:4004/service/zTR_Backend_1/metadata/IdocTypes
 
+
 GET http://localhost:4004/service/zTR_Backend_1/metadata/Segments
+
 
 GET http://localhost:4004/service/zTR_Backend_1/metadata/Fields
 

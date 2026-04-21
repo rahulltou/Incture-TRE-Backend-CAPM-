@@ -96,7 +96,8 @@ module.exports = cds.service.impl(function () {
                 { destinationName: 'CPI_IFLOW_DEST' }, // Use a logical name
                 {
                     method: 'POST',
-                    url: '/http/ZTRE/IDOC/Reprocess', // Relative path from CPI iFlow
+                    // url: '/http/ZTRE/IDOC/Reprocess', // Relative path from CPI iFlow
+                    url: '/http/IdocReprocessing',
                     data: cpiPayload,
                     headers: { 'Content-Type': 'application/json' }
                 }
@@ -211,7 +212,7 @@ module.exports = cds.service.impl(function () {
                 .where({ errorCode: idocStatus, active: true })
         );
 
-        const reprocessStatus = errorCode ? 'FAILED' : 'SUCCESS';
+        const reprocessStatus = errorCode ? 'FAILED' : 'RE-PROCESSED';
         const currentStatus = idocStatus;
 
         /* Update attempt */
@@ -226,7 +227,7 @@ module.exports = cds.service.impl(function () {
         );
 
         /* Sync FailedIdocHeaders on success */
-        if (reprocessStatus === 'SUCCESS') {
+        if (reprocessStatus === 'RE-PROCESSED') {
             await tx.run(
                 UPDATE(FailedIdocHeaders)
                     .set({
@@ -339,7 +340,7 @@ module.exports = cds.service.impl(function () {
         /* 1. Find successful reprocess attempts */
         const successfulAttempts = await tx.run(
             SELECT.from(ReprocessHeaders)
-                .where({ reprocessStatus: 'SUCCESS' })
+                .where({ reprocessStatus: 'RE-PROCESSED' })
                 .columns(['ID', 'docnum'])
         );
 
@@ -373,7 +374,7 @@ module.exports = cds.service.impl(function () {
 
         return {
             archivedCount: successfulAttempts.length,
-            status: 'ARCHIVED_SUCCESSFUL_IDOCS'
+            status: 'ARCHIVED_RE-PROCESSED_IDOCS'
         };
     });
 

@@ -60,12 +60,17 @@
       "connectivity": true,
       "destinations": true,
       "html5-repo": true,
-      
       "Corrected_Error_EDIDC": {
         "kind": "odata-v2",
         "model": "srv/external/Corrected_Error_EDIDC",
         "[development]": {
           "mock": true
+        },
+        "[production]": {
+          "credentials": {
+            "destination": "{destination-name}",
+            "path": "/sap/opu/odata/sap/Corrected_Error_EDIDC"
+          }
         }
       },
       "ZIDOC_METADATA_SRV": {
@@ -82,7 +87,7 @@
         }
       }
     },
-    "profile": "production"
+    "profile": "production""
   },
   "workspaces": [
     "app/*"
