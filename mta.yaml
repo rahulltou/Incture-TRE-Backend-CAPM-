@@ -1,8 +1,13 @@
 _schema-version: 3.3.0
 ID: ZTRE_Backend_1
 description: A simple CAP project.
-version: 1.0.0
+version: 1.0.1
 modules:
+- name: ZTRE_Backend_1-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: ZTRE_Backend_1-db
 - name: ZTRE_Backend_1-srv
   type: nodejs
   path: gen/srv
@@ -114,7 +119,7 @@ modules:
     commands:
     - npm install
     - npm run build:cf
-    supported-platforms: []
+    supported-platforms: []    
 resources:
 - name: ZTRE_Backend_1-auth
   type: org.cloudfoundry.managed-service

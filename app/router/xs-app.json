@@ -1,6 +1,12 @@
 {
   "routes": [
     {
+      "source": "^/service/(.*)$",
+      "target": "/service/$1",
+      "destination": "srv-api",
+      "csrfProtection": true
+    },
+    {
       "source": "^/-/cds/.*",
       "destination": "mtx-api",
       "authenticationType": "none"

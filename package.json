@@ -87,7 +87,7 @@
         }
       }
     },
-    "profile": "development"
+    "profile": "production"
   },
   "workspaces": [
     "app/*"
