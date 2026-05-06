@@ -1,40 +1,22 @@
 using {ZTR_Backend_1 as db} from '../db/schema.cds';
-using {Corrected_Error_EDIDC as ext} from './external/Corrected_Error_EDIDC.csn';
 
 @path: '/service/zTR_Backend_1/failed-idoc'
-@requires: 'TRE.EXECUTION.EXECUTE'
+// @requires: 'TRE.EXECUTION.EXECUTE'   ← uncomment to restrict to authenticated users with this role
 service FailedIdocService {
 
   /**
    * Persisted Failed IDOCs (Header)
-   * Used by UI & APIs
+   * Read by UI & external APIs
+   * Populated by the scheduler via loadFailedIdocHeaders
    */
   @readonly
   entity FailedIdocHeaders as projection on db.FailedIdocHeaders;
 
   /**
-   * External EDIDC (typed)
-   * Used internally by CAP for loading
-   */
-  @readonly
-  @cds.persistence.skip
-  entity EDIDCExternal     as
-    projection on ext.EDIDCSet {
-      key Docnum,
-          Landscape,
-          SysAlias,
-          Mestyp,
-          Idoctp,
-          Status,
-          Credat,
-          Cretim,
-          Sndprn,
-          Rcvprn
-    };
-
-  /**
    * Load Failed IDOC Headers from SAP
-   * Scheduler + Admin trigger
+   * Called by: scheduler (on startup + interval), admin manual trigger
+   * Reads: MessageTypesForMetadata + ErrorCodes config
+   * Writes: FailedIdocHeaders (upsert)
    */
   action loadFailedIdocHeaders() returns {
     loaded : Integer;

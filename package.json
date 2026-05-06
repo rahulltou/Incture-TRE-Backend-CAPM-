@@ -68,8 +68,8 @@
         },
         "[production]": {
           "credentials": {
-            "destination": "{destination-name}",
-            "path": "/sap/opu/odata/sap/Corrected_Error_EDIDC"
+            "destination": "s4h-210-odata-basic",
+            "path": "/sap/opu/odata/sap/ZIDOC_ERROR_REPROCESSING_SRV"
           }
         }
       },
@@ -87,7 +87,7 @@
         }
       }
     },
-    "profile": "production"
+    "profile": "development"
   },
   "workspaces": [
     "app/*"
