@@ -1,5 +1,6 @@
 const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
+const LOG = cds.log('reprocess');
 
 module.exports = cds.service.impl(function () {
 
@@ -21,6 +22,8 @@ module.exports = cds.service.impl(function () {
 
         const { CONTROL } = payload;
         const docnum = CONTROL.DOCNUM;
+
+        LOG.info(`[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`);
 
         // Manually generate the UUID for the Header
         const attemptId = cds.utils.uuid();
@@ -91,6 +94,7 @@ module.exports = cds.service.impl(function () {
         // }
 
         try {
+            LOG.info(`[submitReprocessAttempt] Forwarding to CPI (${destination}) for attempt ${attemptId}...`);
             await executeHttpRequest(
                 // { destinationName: 'CPI_REPROCESS_IDOC' },
                 { destinationName: 'CPI_IFLOW_DEST' }, // Use a logical name
@@ -102,13 +106,15 @@ module.exports = cds.service.impl(function () {
                     headers: { 'Content-Type': 'application/json' }
                 }
             );
+            LOG.info(`[submitReprocessAttempt] Successfully forwarded to CPI.`);
             // return { status: 'SUCCESS', message: 'Forwarded to CPI' };
         } catch (error) {
-            req.error(500, `CPI Communication Failed: ${err.message}`);
+            LOG.error(`[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${error.message}`);
+            req.error(500, `CPI Communication Failed: ${error.message}`);
         }
 
         return {
-            attemptId: header.ID,
+            attemptId: attemptId,
             status: 'SUBMITTED'
         };
     });
@@ -198,11 +204,14 @@ module.exports = cds.service.impl(function () {
         const { attemptId, idocStatus, reprocessMessage } = req.data;
         const tx = cds.tx(req);
 
+        LOG.info(`[updateReprocessResult] Received callback for attempt ${attemptId} with status ${idocStatus}`);
+
         const attempt = await tx.run(
             SELECT.one.from(ReprocessHeaders).where({ ID: attemptId })
         );
 
         if (!attempt) {
+            LOG.warn(`[updateReprocessResult] Attempt ${attemptId} not found`);
             return req.error(404, 'Reprocess attempt not found');
         }
 
@@ -214,6 +223,8 @@ module.exports = cds.service.impl(function () {
 
         const reprocessStatus = errorCode ? 'FAILED' : 'RE-PROCESSED';
         const currentStatus = idocStatus;
+
+        LOG.info(`[updateReprocessResult] Mapped SAP status ${idocStatus} to business status ${reprocessStatus}`);
 
         /* Update attempt */
         await tx.run(
@@ -337,6 +348,8 @@ module.exports = cds.service.impl(function () {
     this.on('archiveReprocessed', async (req) => {
         const tx = cds.tx(req);
 
+        LOG.info(`[archiveReprocessed] Checking for successful IDocs to archive...`);
+
         /* 1. Find successful reprocess attempts */
         const successfulAttempts = await tx.run(
             SELECT.from(ReprocessHeaders)
@@ -345,6 +358,7 @@ module.exports = cds.service.impl(function () {
         );
 
         if (!successfulAttempts.length) {
+            LOG.info(`[archiveReprocessed] No successful attempts found to archive.`);
             return {
                 archivedCount: 0,
                 status: 'NO_SUCCESSFUL_ATTEMPTS'
@@ -371,6 +385,8 @@ module.exports = cds.service.impl(function () {
             DELETE.from(FailedIdocHeaders)
                 .where({ docnum: { in: docnums } })
         );
+
+        LOG.info(`[archiveReprocessed] Successfully archived ${successfulAttempts.length} IDoc(s).`);
 
         return {
             archivedCount: successfulAttempts.length,

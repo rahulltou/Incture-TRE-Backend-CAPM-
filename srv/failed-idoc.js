@@ -12,6 +12,7 @@ module.exports = cds.service.impl(async function () {
 
   const {
     FailedIdocHeaders,
+    FailedIdocItems,
     MessageTypesForMetadata,
     ErrorCodes
   } = cds.entities('ZTR_Backend_1');
@@ -61,6 +62,7 @@ module.exports = cds.service.impl(async function () {
     for (const sysAlias of systems) {
       try {
         let rows = [];
+        let edidcSrv = null;
 
         if (USE_MOCK_FAILED_IDOC) {
           /* ── LOCAL DEV: inline mock data ──────────────────────── */
@@ -81,7 +83,7 @@ module.exports = cds.service.impl(async function () {
 
           LOG.info(`[loadFailedIdocHeaders] Connecting to ${sysAlias} via BTP destination …`);
 
-          const edidcSrv = await cds.connect.to(serviceKey, {
+          edidcSrv = await cds.connect.to(serviceKey, {
             kind: 'odata-v2',
             model: 'srv/external/Corrected_Error_EDIDC',
             credentials: {
@@ -126,7 +128,10 @@ module.exports = cds.service.impl(async function () {
             continue; // skip re-insert
           }
 
+          const newHeaderId = cds.utils.uuid();
+
           await INSERT.into(FailedIdocHeaders).entries({
+            ID: newHeaderId,
             docnum: r.Docnum,
             mestyp: r.Mestyp,
             idoctp: r.Idoctp,
@@ -137,9 +142,37 @@ module.exports = cds.service.impl(async function () {
             createdTime: r.Cretim,
             sender: r.Sndprn,
             receiver: r.Rcvprn,
-            errorFlag: true
+            errorFlag: true,
+            processingStatus: 'Failed'
           });
           totalLoaded++;
+
+          /* ── Fetch and Store EDIDD Segments ───────────────────── */
+          try {
+            let ediddRows = [];
+            if (USE_MOCK_FAILED_IDOC) {
+              ediddRows = getMockEdidd(r.Docnum);
+            } else if (edidcSrv) {
+              ediddRows = await edidcSrv.run(SELECT.from('EDIDDSet').where({ Docnum: r.Docnum }));
+            }
+
+            const itemsToInsert = ediddRows.map(item => ({
+              parent_ID: newHeaderId,
+              docnum: item.Docnum,
+              segnum: item.Segnum,
+              segnam: item.Segnam,
+              psgnum: item.Psgnum,
+              hlevel: item.Hlevel,
+              sdata: item.Sdata
+            }));
+
+            if (itemsToInsert.length > 0) {
+              await INSERT.into(FailedIdocItems).entries(itemsToInsert);
+              LOG.info(`[loadFailedIdocHeaders] Saved ${itemsToInsert.length} EDIDD rows for docnum ${r.Docnum}`);
+            }
+          } catch (ediddErr) {
+            LOG.error(`[loadFailedIdocHeaders] Failed to fetch/store EDIDD for docnum ${r.Docnum}: ${ediddErr.message}`);
+          }
         }
 
       } catch (err) {
@@ -150,6 +183,27 @@ module.exports = cds.service.impl(async function () {
 
     LOG.info(`[loadFailedIdocHeaders] Done — new records: ${totalLoaded}`);
     return { loaded: totalLoaded, status: 'SUCCESS' };
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+     ACTION: getIdocData
+     ───────────────────────────────────────────────────────────────
+     Fetch EDIDD segment data for a specific IDoc from SAP.
+  ═══════════════════════════════════════════════════════════════ */
+  this.on('getIdocData', async (req) => {
+    const { docnum } = req.data;
+    if (!docnum) {
+      return req.error(400, 'docnum is required');
+    }
+
+    try {
+      LOG.info(`[getIdocData] Fetching local EDIDD for docnum: ${docnum}`);
+      const rows = await SELECT.from(FailedIdocItems).where({ docnum });
+      return JSON.stringify(rows);
+    } catch (error) {
+      LOG.error(`[getIdocData] Failed to fetch IDoc data from local DB: ${error.message}`);
+      return req.error(500, `Failed to fetch IDoc data from local DB: ${error.message}`);
+    }
   });
 
 });
@@ -194,6 +248,27 @@ function getMockEdidc() {
       Cretim: '092010',
       Sndprn: 'LSYSTEM',
       Rcvprn: 'ERPCLNT'
+    }
+  ];
+}
+
+function getMockEdidd(docnum) {
+  return [
+    {
+      Docnum: docnum,
+      Segnum: '000001',
+      Segnam: 'E1MARAM',
+      Psgnum: '000000',
+      Hlevel: '01',
+      Sdata: 'MATNR=MAT001;MBRSH=M;MTART=FERT'
+    },
+    {
+      Docnum: docnum,
+      Segnum: '000002',
+      Segnam: 'E1MAKTM',
+      Psgnum: '000001',
+      Hlevel: '02',
+      Sdata: 'SPRAS=E;MAKTX=New Material Description'
     }
   ];
 }

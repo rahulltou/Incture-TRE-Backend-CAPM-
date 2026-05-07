@@ -3,6 +3,7 @@ const cds = require("@sap/cds");
 
 /* Toggle for mock metadata testing */
 const USE_MOCK_METADATA = process.env.USE_MOCK_METADATA === "true";
+const LOG = cds.log("metadata-load");
 
 module.exports = function (srv) {
     const { uuid } = cds.utils;
@@ -20,58 +21,67 @@ module.exports = function (srv) {
      *********************************************/
     srv.on("loadMetadata", "MessageTypesForMetadata", async (req) => {
         const ID = req.params[0].ID || req.params[0];
-        const tx = cds.tx(req);
 
-        /* 1: Get configuration row */
-        const admin = await tx.run(
-            SELECT.one.from(MessageTypesForMetadata).where({ ID })
-        );
+        /* 1: Get configuration row — CAP 9 auto-tx, no cds.tx(req) needed */
+        const admin = await SELECT.one.from(MessageTypesForMetadata).where({ ID });
 
         if (!admin) return req.error(404, "Configuration record not found");
 
-        const { messageType, systemAlias } = admin;
-
         /* 2: If inactive → delete metadata */
         if (!admin.active) {
-            await deleteMetadata(tx, admin);
-            await tx.run(
-                UPDATE(MessageTypesForMetadata)
-                    .set({ metadataLoaded: false, lastLoadedAt: null })
-                    .where({ ID: admin.ID })
-            );
+            LOG.info(`[loadMetadata] Configuration inactive for ${admin.messageType}, deleting existing metadata...`);
+            await deleteMetadata(admin);
+            await UPDATE(MessageTypesForMetadata)
+                .set({ metadataLoaded: false, lastLoadedAt: null })
+                .where({ ID: admin.ID });
             return result(admin, "INACTIVE_METADATA_REMOVED");
         }
 
-        /* 3: If already loaded → skip */
-        if (admin.metadataLoaded)
-            return result(admin, "ALREADY_LOADED");
+        /* 3: Clear existing metadata before fetching fresh data */
+        LOG.info(`[loadMetadata] Clearing existing metadata for ${admin.messageType} to force a fresh reload...`);
+        await deleteMetadata(admin);
 
         /**********************************************
-         * 4: READ METADATA FROM SAP ODATA (EDMX) OR MOCK
+         * 4: READ METADATA FROM SAP ODATA OR MOCK
          *********************************************/
         let rows = [];
 
-        // let USE_MOCK_METADATA_local = 'X';
         if (USE_MOCK_METADATA) {
-        // if (USE_MOCK_METADATA_local) {
-            rows = getMockMetadata(messageType);
+            rows = getMockMetadata(admin.messageType);
         } else {
-            try {               
-                const extSrv = await cds.connect.to(admin.systemAlias, {
+            try {
+                /* Dynamic BTP destination: admin.systemAlias must match a
+                 * BTP Destination name configured in the Destination Service.
+                 * Use unique serviceKey to avoid CAP connection cache clash. */
+                const metaServiceKey = `ZIDOC_METADATA_SRV__${admin.systemAlias}`;
+
+                const extSrv = await cds.connect.to(metaServiceKey, {
                     kind: "odata-v2",
-                    model: "srv/external/ZIDOC_METADATA_SRV"
+                    model: "srv/external/ZIDOC_METADATA_SRV",
+                    credentials: {
+                        destination: admin.systemAlias,
+                        // ZIDOC_METADATA_SRV.edmx is misnamed — actual SAP service
+                        // containing MESTYPINFOSet is ZIDOC_ERROR_REPROCESSING_SRV
+                        path: "/sap/opu/odata/sap/ZIDOC_ERROR_REPROCESSING_SRV"
+                    }
                 });
 
-                // READ SEGMENT METADATA FROM EDMX ODATA MODEL
-                const sapSegments = await extSrv.run(
-                    SELECT.from("MESTYPINFOSet").where({ Mestyp: messageType })
-                );
+                // Execute query separately
+                const response = await extSrv.send({
+                    method: "GET",
+                    path: `/MESTYPINFOSet?$filter=Mestyp eq '${admin.messageType}' and Idoctyp eq '${admin.idocType}'&$expand=ToFields&$format=json`
+                });
+                LOG.info(`[loadMetadata] sapSegments Response Received from ${admin.systemAlias}`);
+
+                const sapSegments = response.d?.results || response.d || response;
 
                 rows = transformEdmxSegmentsToLegacyRows(sapSegments);
+
             } catch (err) {
+                LOG.error(`[loadMetadata] Failed to fetch SAP metadata for ${admin.messageType}: ${err.message}`);
                 return req.error(
                     500,
-                    `Failed to fetch SAP metadata for ${messageType}: ${err.message}`
+                    `Failed to fetch SAP metadata for ${admin.messageType}: ${err.message}`
                 );
             }
         }
@@ -79,58 +89,59 @@ module.exports = function (srv) {
         if (!rows.length) return result(admin, "NO_METADATA_FOUND");
 
         /**********************************************
-         * 5: PERSIST METADATA EXACTLY LIKE EXISTING LOGIC
+         * 5: PERSIST METADATA
          *********************************************/
-        const counts = await persistMetadata(tx, admin, rows);
+        LOG.info(`[loadMetadata] Persisting metadata for ${admin.messageType}...`);
+        const counts = await persistMetadata(admin, rows);
+        LOG.info(`[loadMetadata] Metadata persisted successfully: ${JSON.stringify(counts)}`);
 
         /* 6: Mark record as loaded */
-        await tx.run(
-            UPDATE(MessageTypesForMetadata)
-                .set({ metadataLoaded: true, lastLoadedAt: new Date() })
-                .where({ ID: admin.ID })
-        );
+        await UPDATE(MessageTypesForMetadata)
+            .set({ metadataLoaded: true, lastLoadedAt: new Date() })
+            .where({ ID: admin.ID });
 
         return {
             messageType: admin.messageType,
             systemAlias: admin.systemAlias,
             status: "SUCCESS",
-            IdocTypes: counts.idocTypes,
-            Segments: counts.segments,
-            Fields: counts.fields,
+            idocTypes: counts.idocTypes,   // camelCase to match CDS return type
+            segments: counts.segments,
+            fields: counts.fields,
         };
     });
 
     /**********************************************
      * DELETE METADATA (unchanged)
      *********************************************/
-    async function deleteMetadata(tx, admin) {
-        await tx.run(
-            DELETE.from(Fields).where({
-                parent_parent_parent_messageType: admin.messageType,
-                parent_parent_parent_systemAlias: admin.systemAlias,
-            })
-        );
+    async function deleteMetadata(admin) {
+        // Step 1: Get the parent MessageType ID
+        const msgType = await SELECT.one.from(MessageTypes).where({
+            messageType: admin.messageType,
+            systemAlias: admin.systemAlias,
+        });
 
-        await tx.run(
-            DELETE.from(Segments).where({
-                parent_parent_messageType: admin.messageType,
-                parent_parent_systemAlias: admin.systemAlias,
-            })
-        );
+        if (!msgType) return; // Nothing to delete
 
-        await tx.run(
-            DELETE.from(IdocTypes).where({
-                parent_messageType: admin.messageType,
-                parent_systemAlias: admin.systemAlias,
-            })
-        );
+        // Step 2: Get all IdocType IDs
+        const idocTypes = await SELECT.from(IdocTypes).where({ parent_ID: msgType.ID });
+        const idocTypeIds = idocTypes.map(i => i.ID);
 
-        await tx.run(
-            DELETE.from(MessageTypes).where({
-                messageType: admin.messageType,
-                systemAlias: admin.systemAlias,
-            })
-        );
+        if (idocTypeIds.length > 0) {
+            // Step 3: Get all Segment IDs
+            const segments = await SELECT.from(Segments).where({ parent_ID: { 'in': idocTypeIds } });
+            const segmentIds = segments.map(s => s.ID);
+
+            if (segmentIds.length > 0) {
+                // Delete Fields
+                await DELETE.from(Fields).where({ parent_ID: { 'in': segmentIds } });
+            }
+            // Delete Segments
+            await DELETE.from(Segments).where({ parent_ID: { 'in': idocTypeIds } });
+        }
+        // Delete IdocTypes
+        await DELETE.from(IdocTypes).where({ parent_ID: msgType.ID });
+        // Delete MessageTypes
+        await DELETE.from(MessageTypes).where({ ID: msgType.ID });
     }
 
     /**********************************************
@@ -158,9 +169,11 @@ module.exports = function (srv) {
 
             };
 
-            // Process Fields
-            if (seg.ToFields?.results) {
-                for (const fld of seg.ToFields.results) {
+            // Process Fields (Handle both flat array and .results object)
+            const sapFields = Array.isArray(seg.ToFields) ? seg.ToFields : seg.ToFields?.results;
+
+            if (sapFields) {
+                for (const fld of sapFields) {
                     legacy.FIELDS.push({
                         FIELDNAME: fld.Fieldname,
                         LABEL: fld.Label,
@@ -288,148 +301,93 @@ module.exports = function (srv) {
     //     return { idocTypes: idocs, segments, fields };
     // }
 
-    async function persistMetadata(tx, admin, rows) {
-        let idocs = 0,
-            segments = 0,
-            fields = 0;
+    async function persistMetadata(admin, rows) {
+        let idocs = 0, segments = 0, fields = 0;
 
-        /*********************************************************
-         * 1️⃣ MESSAGE TYPE ROOT (SAFE EXTRACT)
-         * - Collect all distinct messageType descriptions from rows
-         * - Pick the FIRST valid one (SAP sends same for all segments)
-         *********************************************************/
-        const msgDescriptions = rows
-            .map(r => r.MESTYP_DESC)
-            .filter(d => d && d !== "");
-
-        const messageTypeDesc =
-            msgDescriptions.length > 0 ? msgDescriptions[0] : admin.messageType;
-
+        /* 1️⃣ MESSAGE TYPE ROOT */
+        const msgDescriptions = rows.map(r => r.MESTYP_DESC).filter(d => d && d !== "");
+        const messageTypeDesc = msgDescriptions.length > 0 ? msgDescriptions[0] : admin.messageType;
         const messageTypeId = uuid();
 
-        await tx.run(
-            INSERT.into(MessageTypes).entries({
-                ID: messageTypeId,
-                sapLandscape: admin.sapLandscape,
-                systemAlias: admin.systemAlias,
-                messageType: admin.messageType,
-                description: messageTypeDesc,     // ✔ always correct now
-                validFrom: new Date("2000-01-01"),
-                validTo: null
-            })
-        );
+        await INSERT.into(MessageTypes).entries({
+            ID: messageTypeId,
+            sapLandscape: admin.sapLandscape,
+            systemAlias: admin.systemAlias,
+            messageType: admin.messageType,
+            description: messageTypeDesc
+            // validFrom / validTo removed — not in schema
+        });
 
-        /*********************************************************
-         * 2️⃣ GROUP SEGMENTS BY IDOCTYP (SAP MULTIPLE IDOCs)
-         *********************************************************/
+        /* 2️⃣ GROUP SEGMENTS BY IDOCTYP */
         const grouped = {};
         for (const r of rows) {
             if (!grouped[r.IDOCTYP]) grouped[r.IDOCTYP] = [];
             grouped[r.IDOCTYP].push(r);
         }
 
-        /*********************************************************
-         * 3️⃣ PROCESS EACH IDOC TYPE
-         *********************************************************/
+        /* 3️⃣ PROCESS EACH IDOC TYPE */
         for (const [idocType, segs] of Object.entries(grouped)) {
             idocs++;
 
-            /*******************************************************
-             * Extract IDocType Description (SAFE)
-             * Search every segment for IDOCTYP_DESC
-             *******************************************************/
-            const idocDescriptions = segs
-                .map(s => s.IDOCTYP_DESC)
-                .filter(d => d && d !== "");
-
-            const idocTypeDesc =
-                idocDescriptions.length > 0 ? idocDescriptions[0] : idocType;
-
+            const idocDescriptions = segs.map(s => s.IDOCTYP_DESC).filter(d => d && d !== "");
+            const idocTypeDesc = idocDescriptions.length > 0 ? idocDescriptions[0] : idocType;
             const idocTypeId = uuid();
 
-            await tx.run(
-                INSERT.into(IdocTypes).entries({
-                    ID: idocTypeId,
-                    parent_ID: messageTypeId,
-                    idocType,
-                    description: idocTypeDesc,  // ✔ safe & correct
-                    version: "1",
-                    validFrom: new Date("2000-01-01"),
-                    validTo: null
-                })
-            );
+            await INSERT.into(IdocTypes).entries({
+                ID: idocTypeId,
+                parent_ID: messageTypeId,
+                idocType,
+                description: idocTypeDesc,
+                version: "1"
+                // validFrom / validTo removed — not in schema
+            });
 
-            /*********************************************************
-             * 4️⃣ INSERT SEGMENTS FOR THIS IDOC TYPE
-             *********************************************************/
+            /* 4️⃣ INSERT SEGMENTS */
             for (const s of segs) {
                 segments++;
-
                 const segmentId = uuid();
 
-                await tx.run(
-                    INSERT.into(Segments).entries({
-                        ID: segmentId,
-                        parent_ID: idocTypeId,
+                await INSERT.into(Segments).entries({
+                    ID: segmentId,
+                    parent_ID: idocTypeId,
+                    segmentName: s.SEGMENT,
+                    segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
+                    parentSegment: s.PARENT_SEGMENT ?? null,
+                    ParentSegNum: s.PARENT_SEGNUM ?? null,
+                    SegMustFlg: s.SEGMUSTFLG ?? false,
+                    SegOccmax: s.SEGOCCMAX ?? null,
+                    level: s.LEVEL ?? 1,
+                    repeatable: s.REPEATABLE ?? true
+                    // validFrom / validTo removed — not in schema
+                });
 
-                        segmentName: s.SEGMENT,
-                        segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
-
-                        parentSegment: s.PARENT_SEGMENT ?? null,
-                        parentSegNum: s.PARENT_SEGNUM ?? null,
-                        segMustFlg: s.SEGMUSTFLG ?? false,
-                        segOccmax: s.SEGOCCMAX ?? null,
-
-                        level: s.LEVEL ?? 1,
-                        repeatable: s.REPEATABLE ?? true,
-
-                        validFrom: new Date(),
-                        validTo: null
-                    })
-                );
-
-                /*********************************************************
-                 * 5️⃣ INSERT FIELDS FOR THIS SEGMENT
-                 *********************************************************/
+                /* 5️⃣ INSERT FIELDS */
                 for (const f of s.FIELDS ?? []) {
                     fields++;
 
-                    await tx.run(
-                        INSERT.into(Fields).entries({
-                            ID: uuid(),
-                            parent_ID: segmentId,
-
-                            fieldName: f.FIELDNAME,
-                            label: f.LABEL ?? f.FIELDNAME,
-                            dataType: f.DATATYPE ?? "CHAR",
-                            length: f.LENGTH ?? 0,
-                            decimals: f.DECIMALS ?? 0,
-                            mandatory: !!f.MANDATORY,
-
-                            editable: true,
-                            visible: true,
-
-                            startOffset: f.OFFSET_FROM ?? null,
-                            endOffset: f.OFFSET_TO ?? null,
-                            valueHelp: f.VALUEHELP ?? null,
-
-                            validFrom: new Date(),
-                            validTo: null
-                        })
-                    );
+                    await INSERT.into(Fields).entries({
+                        ID: uuid(),
+                        parent_ID: segmentId,
+                        fieldName: f.FIELDNAME,
+                        label: f.LABEL ?? f.FIELDNAME,
+                        dataType: f.DATATYPE ?? "CHAR",
+                        length: f.LENGTH ?? 0,
+                        decimals: f.DECIMALS ?? 0,
+                        mandatory: !!f.MANDATORY,
+                        editable: true,
+                        visible: true,
+                        startOffset: f.OFFSET_FROM ?? null,
+                        endOffset: f.OFFSET_TO ?? null,
+                        valueHelp: f.VALUEHELP ?? null
+                        // validFrom / validTo removed — not in schema
+                    });
                 }
             }
         }
 
-        /*********************************************************
-         * 6️⃣ FINAL RETURN (your existing structure)
-         *********************************************************/
-        return {
-            idocTypes: idocs,
-            segments,
-            fields
-        };
+        return { idocTypes: idocs, segments, fields };
     }
+
 
 
     /**********************************************

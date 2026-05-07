@@ -6,11 +6,28 @@ service FailedIdocService {
 
   /**
    * Persisted Failed IDOCs (Header)
-   * Read by UI & external APIs
-   * Populated by the scheduler via loadFailedIdocHeaders
+   * Read by UI & external APIs — detail/list view
    */
   @readonly
+  @cds.redirection.target
   entity FailedIdocHeaders as projection on db.FailedIdocHeaders;
+
+  @readonly
+  entity FailedIdocItems as projection on db.FailedIdocItems;
+
+  /**
+   * IDoc Correction Dashboard — grouped summary view
+   * Aggregates failed IDocs by IDoc Type, Message Type, System Alias, Error Status Code
+   */
+  @readonly
+  entity FailedIdocSummary as select from db.FailedIdocHeaders {
+    key idoctp        as idocType,
+    key mestyp        as messageType,
+    key landscape,
+    key status        as errorStatusCode,
+    count(*) as numberOfIdocs : Integer
+  }
+  group by idoctp, mestyp, landscape, status;
 
   /**
    * Load Failed IDOC Headers from SAP
@@ -22,4 +39,10 @@ service FailedIdocService {
     loaded : Integer;
     status : String;
   };
+
+  /**
+   * Fetch IDoc segment data (EDIDD) from SAP for a specific IDoc
+   * Used by the "View IDoc Data" screen
+   */
+  action getIdocData(docnum: String, systemAlias: String) returns String; // returns JSON string of segments
 }
