@@ -11,4 +11,13 @@ require('./srv/scheduler'); // register scheduler lifecycle hook
 
 // Delegate to the default CDS server bootstrap
 const cds = require('@sap/cds');
+const cors = require('cors');
+
+cds.on('bootstrap', app => {
+    app.use(cors({
+        origin: true,       // Reflects the request origin, allowing all origins
+        credentials: true   // Allows cookies and authorization headers
+    }));
+});
+
 module.exports = cds.server;

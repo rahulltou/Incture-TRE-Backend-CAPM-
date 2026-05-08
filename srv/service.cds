@@ -7,6 +7,7 @@ service tRE_Admin {
 
   // @odata.draft.enabled
   // @requires: 'TRE.CONFIG.ADMIN'  ← temporarily bypassed
+  @Search.searchable: true
   entity MessageTypesForMetadata as projection on my.MessageTypesForMetadata
     actions {
       action loadMetadata(messageType: String,
@@ -21,10 +22,12 @@ service tRE_Admin {
     };
 
   // @odata.draft.enabled
+  @Search.searchable: true
   entity ErrorCodes              as projection on my.ErrorCodes;
 
   // @odata.draft.enabled
   // @requires: 'TRE.CONFIG.ADMIN'  ← temporarily bypassed
+  @Search.searchable: true
   entity SchedulerConfig         as projection on my.SchedulerConfig;
 
 }

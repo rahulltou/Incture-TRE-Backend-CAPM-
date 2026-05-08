@@ -20,14 +20,20 @@ service FailedIdocService {
    * Aggregates failed IDocs by IDoc Type, Message Type, System Alias, Error Status Code
    */
   @readonly
+  @Search.searchable: true
   entity FailedIdocSummary as select from db.FailedIdocHeaders {
+    @Search.defaultSearchElement: true
     key idoctp        as idocType,
+    @Search.defaultSearchElement: true
     key mestyp        as messageType,
+    @Search.defaultSearchElement: true
     key landscape,
+    @Search.defaultSearchElement: true
     key status        as errorStatusCode,
-    count(*) as numberOfIdocs : Integer
+    key cast(createdAt as Date) as date : Date,
+    count(*)          as numberOfIdocs : Integer
   }
-  group by idoctp, mestyp, landscape, status;
+  group by idoctp, mestyp, landscape, status, cast(createdAt as Date);
 
   /**
    * Load Failed IDOC Headers from SAP

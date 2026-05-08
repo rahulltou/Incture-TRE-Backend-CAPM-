@@ -116,13 +116,23 @@ module.exports = cds.service.impl(async function () {
             .where({ docnum: r.Docnum, systemAlias: sysAlias });
 
           if (exists) {
-            /* Only update if status changed since last sync */
+            let updatePayload = {};
+            
+            /* Only update status if changed since last sync */
             if (exists.status !== r.Status) {
+              updatePayload.status = r.Status;
+              updatePayload.errorFlag = validErrorCodes.has(r.Status);
+            }
+            
+            /* Backfill createdOn / createdTime if missing in DB but provided by SAP */
+            if (!exists.createdOn && r.Credat) {
+              updatePayload.createdOn = r.Credat;
+              updatePayload.createdTime = r.Cretim;
+            }
+
+            if (Object.keys(updatePayload).length > 0) {
               await UPDATE(FailedIdocHeaders)
-                .set({
-                  status: r.Status,
-                  errorFlag: validErrorCodes.has(r.Status)
-                })
+                .set(updatePayload)
                 .where({ docnum: r.Docnum, systemAlias: sysAlias });
             }
             continue; // skip re-insert
