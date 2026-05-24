@@ -19,21 +19,29 @@ service FailedIdocService {
    * IDoc Correction Dashboard — grouped summary view
    * Aggregates failed IDocs by IDoc Type, Message Type, System Alias, Error Status Code
    */
-  @readonly
-  @Search.searchable: true
-  entity FailedIdocSummary as select from db.FailedIdocHeaders {
+@readonly
+@Search.searchable: true
+entity FailedIdocSummary as
+    select from db.FailedIdocHeaders {
+    
     @Search.defaultSearchElement: true
-    key idoctp        as idocType,
+    key idoctp      as idocType,
+
     @Search.defaultSearchElement: true
-    key mestyp        as messageType,
+    key mestyp      as messageType,
+
     @Search.defaultSearchElement: true
     key landscape,
+
     @Search.defaultSearchElement: true
-    key status        as errorStatusCode,
-    key cast(createdAt as Date) as date : Date,
-    count(*)          as numberOfIdocs : Integer
-  }
-  group by idoctp, mestyp, landscape, status, cast(createdAt as Date);
+    key systemAlias as systemAlias,
+
+    @Search.defaultSearchElement: true
+    key status      as errorStatusCode,
+
+    count(*)        as numberOfIdocs : Integer
+}
+group by idoctp, mestyp, landscape, systemAlias, status;
 
   /**
    * Load Failed IDOC Headers from SAP
@@ -51,4 +59,9 @@ service FailedIdocService {
    * Used by the "View IDoc Data" screen
    */
   action getIdocData(docnum: String, systemAlias: String) returns String; // returns JSON string of segments
+
+  /**
+   * Get all segments for a specific IDoc using only docnum
+   */
+  function getSegmentsForIdoc(docnum: String) returns many FailedIdocItems;
 }

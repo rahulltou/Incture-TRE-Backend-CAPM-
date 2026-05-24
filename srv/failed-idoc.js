@@ -17,6 +17,31 @@ module.exports = cds.service.impl(async function () {
     ErrorCodes
   } = cds.entities('ZTR_Backend_1');
 
+  // Convert SAP /Date(1738281600000)/ to ISO string
+  const parseODataDate = (d) => {
+    if (!d) return d;
+    if (typeof d === 'string' && d.startsWith('/Date(')) {
+      const ms = parseInt(d.match(/\d+/)[0], 10);
+      return new Date(ms).toISOString(); // Returns like "2025-01-31T00:00:00.000Z"
+    }
+    return d;
+  };
+
+  // Convert SAP PT10H30M20S to HH:MM:SS
+  const parseODataTime = (t) => {
+    if (!t) return t;
+    if (typeof t === 'string' && t.startsWith('PT')) {
+      const match = t.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (match) {
+        const h = (match[1] || '0').padStart(2, '0');
+        const m = (match[2] || '0').padStart(2, '0');
+        const s = (match[3] || '0').padStart(2, '0');
+        return `${h}:${m}:${s}`;
+      }
+    }
+    return t;
+  };
+
   /* ═══════════════════════════════════════════════════════════════
      ACTION: loadFailedIdocHeaders
      ───────────────────────────────────────────────────────────────
@@ -126,8 +151,8 @@ module.exports = cds.service.impl(async function () {
             
             /* Backfill createdOn / createdTime if missing in DB but provided by SAP */
             if (!exists.createdOn && r.Credat) {
-              updatePayload.createdOn = r.Credat;
-              updatePayload.createdTime = r.Cretim;
+              updatePayload.createdOn = parseODataDate(r.Credat);
+              updatePayload.createdTime = parseODataTime(r.Cretim);
             }
 
             if (Object.keys(updatePayload).length > 0) {
@@ -147,9 +172,9 @@ module.exports = cds.service.impl(async function () {
             idoctp: r.Idoctp,
             status: r.Status,
             landscape: r.Landscape,
-            systemAlias: sysAlias,
-            createdOn: r.Credat,
-            createdTime: r.Cretim,
+            systemAlias: sysAlias, 
+            createdOn: parseODataDate(r.Credat),
+            createdTime: parseODataTime(r.Cretim),
             sender: r.Sndprn,
             receiver: r.Rcvprn,
             errorFlag: true,
@@ -173,6 +198,7 @@ module.exports = cds.service.impl(async function () {
               segnam: item.Segnam,
               psgnum: item.Psgnum,
               hlevel: item.Hlevel,
+              status: item.Status,
               sdata: item.Sdata
             }));
 
@@ -213,6 +239,29 @@ module.exports = cds.service.impl(async function () {
     } catch (error) {
       LOG.error(`[getIdocData] Failed to fetch IDoc data from local DB: ${error.message}`);
       return req.error(500, `Failed to fetch IDoc data from local DB: ${error.message}`);
+    }
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+     FUNCTION: getSegmentsForIdoc
+     ───────────────────────────────────────────────────────────────
+     Returns all segment records (typed) for a specific IDoc by docnum.
+  ═══════════════════════════════════════════════════════════════ */
+  this.on('getSegmentsForIdoc', async (req) => {
+    const { docnum } = req.data;
+    if (!docnum) {
+      return req.error(400, 'docnum is required');
+    }
+
+    try {
+      LOG.info(`[getSegmentsForIdoc] Fetching typed segments for docnum: ${docnum}`);
+      const segments = await SELECT.from(FailedIdocItems)
+        .where({ docnum })
+        .orderBy('segnum asc');
+      return segments;
+    } catch (error) {
+      LOG.error(`[getSegmentsForIdoc] Failed to fetch IDoc segments: ${error.message}`);
+      return req.error(500, `Failed to fetch IDoc segments: ${error.message}`);
     }
   });
 

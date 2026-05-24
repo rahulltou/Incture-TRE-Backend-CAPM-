@@ -4,12 +4,13 @@
   "description": "A simple CAP project.",
   "dependencies": {
     "@cap-js/hana": "^2",
+    "@sap-cloud-sdk/connectivity": "^4",
     "@sap-cloud-sdk/http-client": "^4.5.1",
+    "@sap-cloud-sdk/resilience": "^4",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
-    "express": "^4",
-    "@sap-cloud-sdk/connectivity": "^4",
-    "@sap-cloud-sdk/resilience": "^4"
+    "cors": "^2.8.6",
+    "express": "^4"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
@@ -23,7 +24,7 @@
     "watch-tre_master_message_type": "cds watch --open nstremastermessage.tremastermessagetype/index.html?sap-ui-xx-viewCache=false --livereload false",
     "undeploy": "cf undeploy ZTRE_Backend_1 --delete-services --delete-service-keys --delete-service-brokers",
     "build": "rimraf resources mta_archives && mbt build --mtar archive",
-    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "deploy": "cf8 deploy mta_archives/archive.mtar --retries 1",
     "watch-tre_master_inb_idoc_errcodes": "cds watch --open nstremasterinbidocerrcodes.tremasterinbidocerrcodes/index.html?sap-ui-xx-viewCache=false --livereload false",
     "watch-tre_master_scheduler": "cds watch --open nstremasterscheduler.tremasterscheduler/index.html?sap-ui-xx-viewCache=false --livereload false",
     "watch-tre_master_message_types": "cds watch --open nstremastermessages.tremastermessagetypes/index.html?sap-ui-xx-viewCache=false --livereload false"
@@ -81,8 +82,8 @@
         },
         "[production]": {
           "credentials": {
-            "destination": "{destination-name}",
-            "path": "/sap/opu/odata/sap/ZIDOC_METADATA_SRV"
+            "destination": "s4h-210-odata-basic",
+            "path": "/sap/opu/odata/sap/ZIDOC_ERROR_REPROCESSING_SRV"
           }
         }
       }

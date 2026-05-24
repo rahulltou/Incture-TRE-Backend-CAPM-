@@ -11,9 +11,6 @@ sap.ui.define(
              * @param aSelectedContexts the selected contexts of the table rows.
              */
             loadMetaData1: function (oContext, aSelectedContexts) {
-
-                debugger;
-
                 if (!aSelectedContexts || aSelectedContexts.length === 0) {
                     sap.m.MessageToast.show("Please select a Message Type");
                     return;

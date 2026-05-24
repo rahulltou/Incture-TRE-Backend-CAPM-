@@ -27,13 +27,9 @@ sap.ui.define(
        *
        * @param {object} oContext - page context (unused for List Report)
        * @param {object[]} aSelectedContexts - selected table row contexts
-       */
+      */
       loadMetaData: function (oContext, aSelectedContexts) {
-
-        debugger;
-
-        aSelectedContexts =
-          this.extensionAPI.getSelectedContexts();
+        aSelectedContexts = this.extensionAPI.getSelectedContexts();
 
         if (!aSelectedContexts || aSelectedContexts.length === 0) {
           MessageToast.show("Please select a Message Type");
@@ -54,30 +50,24 @@ sap.ui.define(
           return;
         }
 
-        const oModel = this.base.getView().getModel();
-
-        oModel.callFunction(
-          "/loadMetadata",
+        this.editFlow.invokeAction(
+          "tRE_Admin.loadMetadata",
           {
-            method: "POST",
-            urlParameters: {
+            contexts: aSelectedContexts,
+            parameters: {
               messageType: oRow.messageType,
               systemAlias: oRow.systemAlias
             },
-            success: function (oResponse) {
-              MessageToast.show(
-                `Metadata loaded for ${oResponse.messageType} (${oResponse.systemAlias})`
-              );
-
-              // Refresh table data so metadataLoaded / lastLoadedAt update
-              oModel.refresh(true);
-            },
-            error: function (oError) {
-              MessageToast.show("Error while loading metadata");
-              console.error(oError);
-            }
+            skipParameterDialog: true
           }
-        );
+        ).then(function () {
+          MessageToast.show(
+            `Metadata loaded for ${oRow.messageType} (${oRow.systemAlias})`
+          );
+        }).catch(function (oError) {
+          console.error(oError);
+          MessageToast.show("Error while loading metadata");
+        });
       }
     };
   }

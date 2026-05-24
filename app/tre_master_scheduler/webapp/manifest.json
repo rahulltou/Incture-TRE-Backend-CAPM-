@@ -5,7 +5,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.1"
+      "version": "0.0.2"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -24,12 +24,38 @@
           "odataVersion": "4.01"
         }
       }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "intent1": {
+          "semanticObject": "TREMaster",
+          "action": "displayScheduler",
+          "title": "{{appTitle}}",
+          "description": "{{appDescription}}"
+        },
+        "intent-manage": {
+          "semanticObject": "TRE",
+          "action": "manage",
+          "title": "Manage TRE Metadata",
+          "icon": "sap-icon://settings"
+        }
+      },
+      "outbounds": {}
     }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "tre.metadata.scheduler"
   },
   "sap.ui": {
     "technology": "UI5",
+    "fullWidth": false,
+    "supportedThemes": [
+      "sap_horizon",
+      "sap_horizon_dark"
+    ],
     "icons": {
-      "icon": "",
+      "icon": "sap-icon://calendar",
       "favIcon": "",
       "phone": "",
       "phone@2": "",
@@ -132,6 +158,12 @@
           }
         }
       }
+    }
+  },
+  "sap.flp": {
+    "type": "component",
+    "componentProperties": {
+      "manifest": "manifest.json"
     }
   },
   "sap.fiori": {

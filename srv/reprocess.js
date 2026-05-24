@@ -16,108 +16,107 @@ module.exports = cds.service.impl(function () {
      * - Persist audit data
      * - Call CPI with IDOC + changes
      */
-    this.on('submitReprocessAttempt', async (req) => {
-        const { payload, changedBy, systemAlias, changes } = req.data;
-        const tx = cds.tx(req);
+    // this.on('submitReprocessAttempt', async (req) => {
+    //     const { payload, changedBy, systemAlias, changes } = req.data;
+    //     const tx = cds.transaction(req);
 
-        const { CONTROL } = payload;
-        const docnum = CONTROL.DOCNUM;
+    //     const { CONTROL } = payload;
+    //     const docnum = CONTROL.DOCNUM;
 
-        LOG.info(`[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`);
+    //     LOG.info(`[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`);
 
-        // Manually generate the UUID for the Header
-        const attemptId = cds.utils.uuid();
+    //     // Manually generate the UUID for the Header
+    //     const attemptId = cds.utils.uuid();
 
-        /* 1. Persist attempt header */
-        await tx.run(
-            INSERT.into(ReprocessHeaders).entries({
-                ID: attemptId,
-                docnum,
-                changedBy,
-                changedAt: new Date(),
-                currentStatus: CONTROL.STATUS,
-                reprocessStatus: 'SUBMITTED',
-                reprocessMessage: null
-            })
-        );
+    //     /* 1. Persist attempt header */
+    //     await tx.run(
+    //         INSERT.into(ReprocessHeaders).entries({
+    //             ID: attemptId,
+    //             docnum,
+    //             changedBy,
+    //             changedAt: new Date(),
+    //             currentStatus: CONTROL.STATUS,
+    //             reprocessStatus: 'SUBMITTED',
+    //             reprocessMessage: null
+    //         })
+    //     );
+    //     /* 2. Persist corrected fields */
+    //     for (const c of changes) {
+    //         await tx.run(
+    //             INSERT.into(ReprocessItems).entries({
+    //                 parent_ID: attemptId,
+    //                 segment: c.segment,
+    //                 field: c.field,
+    //                 oldValue: c.oldValue,
+    //                 newValue: c.newValue
+    //             })
+    //         );
+    //     }
 
-        /* 2. Persist corrected fields */
-        for (const c of changes) {
-            await tx.run(
-                INSERT.into(ReprocessItems).entries({
-                    parent_ID: attemptId,
-                    segment: c.segment,
-                    field: c.field,
-                    oldValue: c.oldValue,
-                    newValue: c.newValue
-                })
-            );
-        }
+    //     const destination = systemAlias;
+    //     /* 3. Call CPI (EDIDC + EDIDD + changes) */
+    //     const cpiPayload = {
+    //         // attemptId: header.ID,
+    //         attemptId: attemptId,
+    //         destination: destination,
+    //         idoc: payload
+    //         // changes
+    //     };
 
-        const destination = systemAlias;
-        /* 3. Call CPI (EDIDC + EDIDD + changes) */
-        const cpiPayload = {
-            // attemptId: header.ID,
-            attemptId: attemptId,
-            destination: destination,
-            idoc: payload
-            // changes
-        };
+    // /* Mock Payload for CPI to Re-Process */
+    //     //         {
+    //     //   "attemptId": "9b99ab1f-35fc-4e88-bd5b-4d05f7c2d001",
 
-    /* Mock Payload for CPI to Re-Process */
-        //         {
-        //   "attemptId": "9b99ab1f-35fc-4e88-bd5b-4d05f7c2d001",
+    //     //   "payload": {
+    //     //     "CONTROL": {
+    //     //       "DOCNUM": "000000000000000001",
+    //     //       "MESTYP": "MATMAS",
+    //     //       "IDOCTYP": "MATMAS05",
+    //     //       "DIRECT": "2",
+    //     //       "RCVPRN": "ERPCLNT",
+    //     //       "SNDPRN": "LSYSTEM",
+    //     //       "STATUS": "51"
+    //     //     },
+    //     //     "DATA": [
+    //     //       {
+    //     //         "SEGNAM": "E1MARAM",
+    //     //         "HLEVEL": 1,
+    //     //         "SDATA": "MATNR=MAT001;MBRSH=M;MTART=FERT"
+    //     //       },
+    //     //       {
+    //     //         "SEGNAM": "E1MAKTM",
+    //     //         "HLEVEL": 2,
+    //     //         "SDATA": "SPRAS=E;MAKTX=New Material Description"
+    //     //       }
+    //     //     ]
+    //     //   }
+    //     // }
 
-        //   "payload": {
-        //     "CONTROL": {
-        //       "DOCNUM": "000000000000000001",
-        //       "MESTYP": "MATMAS",
-        //       "IDOCTYP": "MATMAS05",
-        //       "DIRECT": "2",
-        //       "RCVPRN": "ERPCLNT",
-        //       "SNDPRN": "LSYSTEM",
-        //       "STATUS": "51"
-        //     },
-        //     "DATA": [
-        //       {
-        //         "SEGNAM": "E1MARAM",
-        //         "HLEVEL": 1,
-        //         "SDATA": "MATNR=MAT001;MBRSH=M;MTART=FERT"
-        //       },
-        //       {
-        //         "SEGNAM": "E1MAKTM",
-        //         "HLEVEL": 2,
-        //         "SDATA": "SPRAS=E;MAKTX=New Material Description"
-        //       }
-        //     ]
-        //   }
-        // }
+    //     try {
+    //         LOG.info(`[submitReprocessAttempt] Forwarding to CPI (${destination}) for attempt ${attemptId}...`);
+    //         await executeHttpRequest(
+    //             // { destinationName: 'CPI_REPROCESS_IDOC' },
+    //             { destinationName: 'CPI_IFLOW_DEST' }, // Use a logical name
+    //             {
+    //                 method: 'POST',
+    //                 // url: '/http/ZTRE/IDOC/Reprocess', // Relative path from CPI iFlow
+    //                 url: '/http/IdocReprocessing',
+    //                 data: cpiPayload,
+    //                 headers: { 'Content-Type': 'application/json' }
+    //             }
+    //         );
+    //         LOG.info(`[submitReprocessAttempt] Successfully forwarded to CPI.`);
+    //         // return { status: 'SUCCESS', message: 'Forwarded to CPI' };
+    //     } catch (error) {
+    //         LOG.error(`[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${error.message}`);
+    //         req.error(500, `CPI Communication Failed: ${error.message}`);
+    //     }
 
-        try {
-            LOG.info(`[submitReprocessAttempt] Forwarding to CPI (${destination}) for attempt ${attemptId}...`);
-            await executeHttpRequest(
-                // { destinationName: 'CPI_REPROCESS_IDOC' },
-                { destinationName: 'CPI_IFLOW_DEST' }, // Use a logical name
-                {
-                    method: 'POST',
-                    // url: '/http/ZTRE/IDOC/Reprocess', // Relative path from CPI iFlow
-                    url: '/http/IdocReprocessing',
-                    data: cpiPayload,
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            );
-            LOG.info(`[submitReprocessAttempt] Successfully forwarded to CPI.`);
-            // return { status: 'SUCCESS', message: 'Forwarded to CPI' };
-        } catch (error) {
-            LOG.error(`[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${error.message}`);
-            req.error(500, `CPI Communication Failed: ${error.message}`);
-        }
-
-        return {
-            attemptId: attemptId,
-            status: 'SUBMITTED'
-        };
-    });
+    //     return {
+    //         attemptId: attemptId,
+    //         status: 'SUBMITTED'
+    //     };
+    // });
 
     // For Mocking Only- need to Remove
     // this.on('submitReprocessAttempt', async (req) => {
@@ -194,6 +193,152 @@ module.exports = cds.service.impl(function () {
     //         status: 'SUBMITTED'
     //     };
     // });
+
+    this.on('submitReprocessAttempt', async (req) => {
+
+    const { payload, changedBy, systemAlias, changes } = req.data;
+
+    const { CONTROL } = payload;
+    const docnum = CONTROL.DOCNUM;
+
+    LOG.info(
+        `[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`
+    );
+
+    // Generate UUID
+    const attemptId = cds.utils.uuid();
+
+    // CPI Payload
+    const cpiPayload = {
+        attemptId,
+        destination: systemAlias,
+        idoc: payload
+    };
+
+    /*
+     * STEP 1
+     * Save data in DB FIRST
+     * Independent transaction
+     */
+    const tx = cds.transaction();
+
+    try {
+
+        // Insert Header
+        await tx.run(
+            INSERT.into(ReprocessHeaders).entries({
+                ID: attemptId,
+                docnum,
+                changedBy,
+                changedAt: new Date(),
+                currentStatus: CONTROL.STATUS,
+                reprocessStatus: 'SUBMITTED',
+                reprocessMessage: null
+            })
+        );
+
+        // Insert Items
+        for (const c of changes) {
+
+            await tx.run(
+                INSERT.into(ReprocessItems).entries({
+                    parent_ID: attemptId,
+                    segment: c.segment,
+                    field: c.field,
+                    oldValue: c.oldValue,
+                    newValue: c.newValue
+                })
+            );
+        }
+
+        // IMPORTANT
+        // Commit DB transaction BEFORE CPI call
+        await tx.commit();
+
+        LOG.info(
+            `[submitReprocessAttempt] DB records saved successfully for attempt ${attemptId}`
+        );
+
+    } catch (dbError) {
+
+        await tx.rollback(dbError);
+
+        LOG.error(
+            `[submitReprocessAttempt] DB Save Failed for attempt ${attemptId}: ${dbError.message}`
+        );
+
+        return req.error(
+            500,
+            `DB Save Failed: ${dbError.message}`
+        );
+    }
+
+    /*
+     * STEP 2
+     * Call CPI separately
+     * Even if CPI fails DB remains saved
+     */
+    try {
+
+        LOG.info(
+            `[submitReprocessAttempt] Forwarding to CPI (${systemAlias}) for attempt ${attemptId}...`
+        );
+
+        await executeHttpRequest(
+            {
+                destinationName: 'CPI_IFLOW_DEST'
+            },
+            {
+                method: 'POST',
+                url: '/http/IdocReprocessing',
+                data: cpiPayload,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        LOG.info(
+            `[submitReprocessAttempt] Successfully forwarded to CPI for attempt ${attemptId}`
+        );
+
+        // Update status SUCCESS
+        await UPDATE(ReprocessHeaders)
+            .set({
+                reprocessStatus: 'SUCCESS',
+                reprocessMessage: 'Successfully forwarded to CPI'
+            })
+            .where({
+                ID: attemptId
+            });
+
+    } catch (cpiError) {
+
+        LOG.error(
+            `[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${cpiError.message}`
+        );
+
+        // Update status FAILED
+        await UPDATE(ReprocessHeaders)
+            .set({
+                reprocessStatus: 'CPI-FAILED',
+                reprocessMessage: cpiError.message
+            })
+            .where({
+                ID: attemptId
+            });
+
+        // OPTIONAL:
+        // Don't throw req.error here
+        // Otherwise user gets 500 and may retry unnecessarily
+    }
+
+    return {
+        attemptId,
+        status: 'SUBMITTED'
+    };
+
+});
 
     /**
      * CPI callback updates attempt result

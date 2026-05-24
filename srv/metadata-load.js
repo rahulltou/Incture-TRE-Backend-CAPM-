@@ -75,6 +75,8 @@ module.exports = function (srv) {
 
                 const sapSegments = response.d?.results || response.d || response;
 
+                LOG.info(`[loadMetadata] Transforming SAP metadata for ${admin.messageType} into legacy format... Segment count: ${sapSegments.length} ${JSON.stringify(sapSegments)}`);
+
                 rows = transformEdmxSegmentsToLegacyRows(sapSegments);
 
             } catch (err) {

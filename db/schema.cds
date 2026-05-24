@@ -101,7 +101,7 @@ entity Segments : cuid, managed {
                          on fields.parent = $self;
 }
 
-// entity Fields : cuid, managed, temporal {
+// entity Fields : cuid, managed, temporal { 
 entity Fields : cuid, managed {
   parent      : Association to Segments;
   fieldName   : String(30);
@@ -132,8 +132,8 @@ entity FailedIdocHeaders : cuid, managed {
   landscape        : String(50);                  // SAP Product / Release
   systemAlias      : String(64);                  // BTP Destination name
 
-  createdOn        : Date;
-  createdTime      : Time;
+  createdOn        : String(50);
+  createdTime      : String(50);
   sender           : String(30);                  // Source system
   receiver         : String(30);                  // Destination system
 
@@ -148,12 +148,12 @@ entity FailedIdocHeaders : cuid, managed {
  */
 entity FailedIdocItems : cuid, managed {
   parent : Association to FailedIdocHeaders;
-
   docnum : String(16);
   segnum : String(6);
   segnam : String(27);
   psgnum : String(6);
   hlevel : String(2);
+  status : String(2);
   sdata  : String(1000);
 }
 

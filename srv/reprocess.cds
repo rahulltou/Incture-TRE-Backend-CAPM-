@@ -2,14 +2,16 @@ using {ZTR_Backend_1 as db} from '../db/schema.cds';
 
 /* ---------- Reprocess Service ---------- */
 @path: '/service/zTR_Backend_1/reprocess'
-@requires: 'TRE.EXECUTION.EXECUTE'
+// @requires: 'TRE.EXECUTION.EXECUTE'
 service ReprocessService {
 
   /* Read-only history for UI */
   @readonly
+  @Search.searchable: true
   entity ReprocessHeaders as projection on db.ReprocessHeaders;
 
   @readonly
+  @Search.searchable: true
   entity ReprocessItems   as projection on db.ReprocessItems;
 
   /* UI submits IDOC + corrections */

@@ -76,10 +76,6 @@ modules:
       - nstremasterschedulertremasterscheduler.zip
       name: nstremasterschedulertremasterscheduler
       target-path: app/
-    - artifacts:
-      - nstremastermessagestremastermessagetypes.zip
-      name: nstremastermessagestremastermessagetypes
-      target-path: app/
 - name: nstremastermessagetremastermessagetype
   type: html5
   path: app/tre_master_message_type
@@ -110,16 +106,6 @@ modules:
     - npm install
     - npm run build:cf
     supported-platforms: []
-- name: nstremastermessagestremastermessagetypes
-  type: html5
-  path: app/tre_master_message_type
-  build-parameters:
-    build-result: dist
-    builder: custom
-    commands:
-    - npm install
-    - npm run build:cf
-    supported-platforms: []    
 resources:
 - name: ZTRE_Backend_1-auth
   type: org.cloudfoundry.managed-service
@@ -152,7 +138,7 @@ resources:
   type: org.cloudfoundry.managed-service
   parameters:
     config:
-      HTML5Runtime_enabled: false
+      HTML5Runtime_enabled: true
       init_data:
         instance:
           destinations:
@@ -191,5 +177,4 @@ build-parameters:
   before-all:
   - builder: custom
     commands:
-    - npm ci
     - npx cds build --production
