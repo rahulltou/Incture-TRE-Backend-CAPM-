@@ -1,6 +1,9 @@
 {
   "welcomeFile": "/index.html",
   "authenticationMethod": "route",
+  "whitelistService": {
+    "endpoint": "/whitelist/service"
+  },
   "routes": [
     {
       "source": "^/resources/(.*)$",

@@ -1,5 +1,6 @@
 const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
+const axios = require('axios');
 const LOG = cds.log('reprocess');
 
 module.exports = cds.service.impl(function () {
@@ -212,8 +213,12 @@ module.exports = cds.service.impl(function () {
     const cpiPayload = {
         attemptId,
         destination: systemAlias,
-        idoc: payload
+        payload: payload
     };
+
+    LOG.info(
+        `[submitReprocessAttempt] Generated attempt ID ${attemptId} and prepared CPI payload for docnum ${docnum}: ${JSON.stringify(cpiPayload)}`
+    );
 
     /*
      * STEP 1
@@ -284,19 +289,37 @@ module.exports = cds.service.impl(function () {
             `[submitReprocessAttempt] Forwarding to CPI (${systemAlias}) for attempt ${attemptId}...`
         );
 
-        await executeHttpRequest(
-            {
-                destinationName: 'CPI_IFLOW_DEST'
-            },
-            {
-                method: 'POST',
-                url: '/http/IdocReprocessing',
-                data: cpiPayload,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+        // await executeHttpRequest(
+        //     {
+        //         destinationName: 'CPI_IFLOW_DEST'
+        //     },
+        //     {
+        //         method: 'POST',
+        //         url: '/http/IdocReprocessing',
+        //         data: cpiPayload,
+        //         headers: {
+        //             'Content-Type': 'application/json'
+        //         }
+        //     }
+        // );
+
+        LOG.info(
+            `[submitReprocessAttempt] Using axios to call CPI endpoint for attempt ${attemptId}...`
         );
+
+         // Use axios to POST to the CPI endpoint with provided credentials
+        const cpiUser = 'sb-ed386d9e-a332-4d22-b26e-6ac05814ea1d!b63626|it-rt-inccpidev!b16077';
+        const cpiPwd = 'f9677ae8-b1e2-4e09-bb2e-0f22d14236ee$FDsyqDwD8BHfW5r2yZX-SU4_ijoeOxwTSVn7eq4YCB4=';
+        const cpiEndpoint = 'https://inccpidev.it-cpi001-rt.cfapps.eu10.hana.ondemand.com/http/transactionReprocessing';
+
+        await axios.post(cpiEndpoint, cpiPayload, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${Buffer.from(`${cpiUser}:${cpiPwd}`).toString('base64')}`
+            },
+            timeout: 60000
+        });
+
 
         LOG.info(
             `[submitReprocessAttempt] Successfully forwarded to CPI for attempt ${attemptId}`

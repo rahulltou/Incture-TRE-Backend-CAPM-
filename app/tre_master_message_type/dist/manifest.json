@@ -50,7 +50,7 @@
 	},
 	"sap.cloud": {
 		"public": true,
-		"service": "tre.metadata.messagetype"
+		"service": "tre.metadata"
 	},
 	"sap.ui": {
 		"technology": "UI5",
@@ -74,7 +74,7 @@
 		}
 	},
 	"sap.ui5": {
-		"flexEnabled": true,
+		"flexEnabled": false,
 		"dependencies": {
 			"minUI5Version": "1.145.0",
 			"libs": {
