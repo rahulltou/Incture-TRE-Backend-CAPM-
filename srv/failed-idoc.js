@@ -265,6 +265,19 @@ module.exports = cds.service.impl(async function () {
     }
   });
 
+  this.on('READ', 'FailedIdocSummary', async (req) => {
+    return SELECT.from(FailedIdocHeaders)
+        .columns(
+            'idoctp as idocType',
+            'status as errorStatusCode',
+            { func: 'count', args: ['*'], as: 'numberOfIdocs' }
+        )
+        .groupBy(
+            'idoctp',
+            'status'
+        );
+});
+
 });
 
 /* ═══════════════════════════════════════════════════════════════

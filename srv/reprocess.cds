@@ -15,23 +15,28 @@ service ReprocessService {
   entity ReprocessItems   as projection on db.ReprocessItems;
 
   /* UI submits IDOC + corrections */
-  action submitReprocessAttempt(payload: db.IDocPayload,
-                                changedBy: String,
-                                systemAlias: String,
-                                changes: many {
+  action   submitReprocessAttempt(payload: db.IDocPayload,
+                                  changedBy: String,
+                                  systemAlias: String,
+                                  changes: many {
     segment   : String;
     field     : String;
     oldValue  : String;
     newValue  : String;
-  })                                                     returns {
+  })                                                       returns {
     attemptId : UUID;
     status    : String;
   };
 
+
+
+
+function getProcessInfoForIdoc(docnum : String) returns many ProcessInfo;
+
   /* CPI callback */
-  action updateReprocessResult(attemptId: UUID,
-                               idocStatus: String,
-                               reprocessMessage: String) returns {
+  action   updateReprocessResult(attemptId: UUID,
+                                 idocStatus: String,
+                                 reprocessMessage: String) returns {
     status : String;
   };
 
@@ -45,9 +50,19 @@ service ReprocessService {
   // }
 
   /* Archive completed IDOCs - Job Triggered */
-  action archiveReprocessed() returns {
+  action   archiveReprocessed()                            returns {
     archivedCount : Integer;
     status        : String;
   };
 
+}
+
+
+ type ProcessInfo {
+    segment      : String;
+    field        : String;
+    oldValue     : String;
+    newValue     : String;
+    modifiedDate : Timestamp;
+    modifiedBy   : String;
 }

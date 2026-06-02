@@ -1,6 +1,7 @@
 const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 const axios = require('axios');
+const { SELECT } = cds.ql;
 const LOG = cds.log('reprocess');
 
 module.exports = cds.service.impl(function () {
@@ -363,6 +364,35 @@ module.exports = cds.service.impl(function () {
 
 });
 
+
+    this.on("getProcessInfoForIdoc", async (req) => {
+        const { docnum } = req.data;
+
+        const header = await SELECT.one
+            .from(ReprocessHeaders)
+            .columns(
+                '*',
+                {
+                    ref: ['items'],
+                    expand: ['*']
+                }
+            )
+            .where({ docnum })
+            .orderBy('createdAt desc');
+
+        if (!header) {
+            return [];
+        }
+
+        return (header.items || []).map(item => ({
+            segment: item.segment,
+            field: item.field,
+            oldValue: item.oldValue,
+            newValue: item.newValue,
+            modifiedDate: header.changedAt,
+            modifiedBy: header.changedBy
+        }));
+    });
     /**
      * CPI callback updates attempt result
      * - Map SAP status → business status
