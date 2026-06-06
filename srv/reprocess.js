@@ -198,171 +198,171 @@ module.exports = cds.service.impl(function () {
 
     this.on('submitReprocessAttempt', async (req) => {
 
-    const { payload, changedBy, systemAlias, changes } = req.data;
+        const { payload, changedBy, systemAlias, changes } = req.data;
 
-    const { CONTROL } = payload;
-    const docnum = CONTROL.DOCNUM;
+        const { CONTROL } = payload;
+        const docnum = CONTROL.DOCNUM;
 
-    LOG.info(
-        `[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`
-    );
-
-    // Generate UUID
-    const attemptId = cds.utils.uuid();
-
-    // CPI Payload
-    const cpiPayload = {
-        attemptId,
-        destination: systemAlias,
-        payload: payload
-    };
-
-    LOG.info(
-        `[submitReprocessAttempt] Generated attempt ID ${attemptId} and prepared CPI payload for docnum ${docnum}: ${JSON.stringify(cpiPayload)}`
-    );
-
-    /*
-     * STEP 1
-     * Save data in DB FIRST
-     * Independent transaction
-     */
-    const tx = cds.transaction();
-
-    try {
-
-        // Insert Header
-        await tx.run(
-            INSERT.into(ReprocessHeaders).entries({
-                ID: attemptId,
-                docnum,
-                changedBy,
-                changedAt: new Date(),
-                currentStatus: CONTROL.STATUS,
-                reprocessStatus: 'SUBMITTED',
-                reprocessMessage: null
-            })
+        LOG.info(
+            `[submitReprocessAttempt] Received reprocessing request for docnum ${docnum} from ${changedBy} on ${systemAlias}`
         );
 
-        // Insert Items
-        for (const c of changes) {
+        // Generate UUID
+        const attemptId = cds.utils.uuid();
 
+        // CPI Payload
+        const cpiPayload = {
+            attemptId,
+            destination: systemAlias,
+            payload: payload
+        };
+
+        LOG.info(
+            `[submitReprocessAttempt] Generated attempt ID ${attemptId} and prepared CPI payload for docnum ${docnum}: ${JSON.stringify(cpiPayload)}`
+        );
+
+        /*
+         * STEP 1
+         * Save data in DB FIRST
+         * Independent transaction
+         */
+        const tx = cds.transaction();
+
+        try {
+
+            // Insert Header
             await tx.run(
-                INSERT.into(ReprocessItems).entries({
-                    parent_ID: attemptId,
-                    segment: c.segment,
-                    field: c.field,
-                    oldValue: c.oldValue,
-                    newValue: c.newValue
+                INSERT.into(ReprocessHeaders).entries({
+                    ID: attemptId,
+                    docnum,
+                    changedBy,
+                    changedAt: new Date(),
+                    currentStatus: CONTROL.STATUS,
+                    reprocessStatus: 'SUBMITTED',
+                    reprocessMessage: null
                 })
+            );
+
+            // Insert Items
+            for (const c of changes) {
+
+                await tx.run(
+                    INSERT.into(ReprocessItems).entries({
+                        parent_ID: attemptId,
+                        segment: c.segment,
+                        field: c.field,
+                        oldValue: c.oldValue,
+                        newValue: c.newValue
+                    })
+                );
+            }
+
+            // IMPORTANT
+            // Commit DB transaction BEFORE CPI call
+            await tx.commit();
+
+            LOG.info(
+                `[submitReprocessAttempt] DB records saved successfully for attempt ${attemptId}`
+            );
+
+        } catch (dbError) {
+
+            await tx.rollback(dbError);
+
+            LOG.error(
+                `[submitReprocessAttempt] DB Save Failed for attempt ${attemptId}: ${dbError.message}`
+            );
+
+            return req.error(
+                500,
+                `DB Save Failed: ${dbError.message}`
             );
         }
 
-        // IMPORTANT
-        // Commit DB transaction BEFORE CPI call
-        await tx.commit();
+        /*
+         * STEP 2
+         * Call CPI separately
+         * Even if CPI fails DB remains saved
+         */
+        try {
 
-        LOG.info(
-            `[submitReprocessAttempt] DB records saved successfully for attempt ${attemptId}`
-        );
+            LOG.info(
+                `[submitReprocessAttempt] Forwarding to CPI (${systemAlias}) for attempt ${attemptId}...`
+            );
 
-    } catch (dbError) {
+            // await executeHttpRequest(
+            //     {
+            //         destinationName: 'CPI_IFLOW_DEST'
+            //     },
+            //     {
+            //         method: 'POST',
+            //         url: '/http/IdocReprocessing',
+            //         data: cpiPayload,
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         }
+            //     }
+            // );
 
-        await tx.rollback(dbError);
+            LOG.info(
+                `[submitReprocessAttempt] Using axios to call CPI endpoint for attempt ${attemptId}...`
+            );
 
-        LOG.error(
-            `[submitReprocessAttempt] DB Save Failed for attempt ${attemptId}: ${dbError.message}`
-        );
+            // Use axios to POST to the CPI endpoint with provided credentials
+            const cpiUser = 'sb-ed386d9e-a332-4d22-b26e-6ac05814ea1d!b63626|it-rt-inccpidev!b16077';
+            const cpiPwd = 'f9677ae8-b1e2-4e09-bb2e-0f22d14236ee$FDsyqDwD8BHfW5r2yZX-SU4_ijoeOxwTSVn7eq4YCB4=';
+            const cpiEndpoint = 'https://inccpidev.it-cpi001-rt.cfapps.eu10.hana.ondemand.com/http/transactionReprocessing';
 
-        return req.error(
-            500,
-            `DB Save Failed: ${dbError.message}`
-        );
-    }
-
-    /*
-     * STEP 2
-     * Call CPI separately
-     * Even if CPI fails DB remains saved
-     */
-    try {
-
-        LOG.info(
-            `[submitReprocessAttempt] Forwarding to CPI (${systemAlias}) for attempt ${attemptId}...`
-        );
-
-        // await executeHttpRequest(
-        //     {
-        //         destinationName: 'CPI_IFLOW_DEST'
-        //     },
-        //     {
-        //         method: 'POST',
-        //         url: '/http/IdocReprocessing',
-        //         data: cpiPayload,
-        //         headers: {
-        //             'Content-Type': 'application/json'
-        //         }
-        //     }
-        // );
-
-        LOG.info(
-            `[submitReprocessAttempt] Using axios to call CPI endpoint for attempt ${attemptId}...`
-        );
-
-         // Use axios to POST to the CPI endpoint with provided credentials
-        const cpiUser = 'sb-ed386d9e-a332-4d22-b26e-6ac05814ea1d!b63626|it-rt-inccpidev!b16077';
-        const cpiPwd = 'f9677ae8-b1e2-4e09-bb2e-0f22d14236ee$FDsyqDwD8BHfW5r2yZX-SU4_ijoeOxwTSVn7eq4YCB4=';
-        const cpiEndpoint = 'https://inccpidev.it-cpi001-rt.cfapps.eu10.hana.ondemand.com/http/transactionReprocessing';
-
-        await axios.post(cpiEndpoint, cpiPayload, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${Buffer.from(`${cpiUser}:${cpiPwd}`).toString('base64')}`
-            },
-            timeout: 60000
-        });
-
-
-        LOG.info(
-            `[submitReprocessAttempt] Successfully forwarded to CPI for attempt ${attemptId}`
-        );
-
-        // Update status SUCCESS
-        await UPDATE(ReprocessHeaders)
-            .set({
-                reprocessStatus: 'SUCCESS',
-                reprocessMessage: 'Successfully forwarded to CPI'
-            })
-            .where({
-                ID: attemptId
+            await axios.post(cpiEndpoint, cpiPayload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${Buffer.from(`${cpiUser}:${cpiPwd}`).toString('base64')}`
+                },
+                timeout: 60000
             });
 
-    } catch (cpiError) {
 
-        LOG.error(
-            `[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${cpiError.message}`
-        );
+            LOG.info(
+                `[submitReprocessAttempt] Successfully forwarded to CPI for attempt ${attemptId}`
+            );
 
-        // Update status FAILED
-        await UPDATE(ReprocessHeaders)
-            .set({
-                reprocessStatus: 'CPI-FAILED',
-                reprocessMessage: cpiError.message
-            })
-            .where({
-                ID: attemptId
-            });
+            // Update status SUCCESS
+            await UPDATE(ReprocessHeaders)
+                .set({
+                    reprocessStatus: 'SUCCESS',
+                    reprocessMessage: 'Successfully forwarded to CPI'
+                })
+                .where({
+                    ID: attemptId
+                });
 
-        // OPTIONAL:
-        // Don't throw req.error here
-        // Otherwise user gets 500 and may retry unnecessarily
-    }
+        } catch (cpiError) {
 
-    return {
-        attemptId,
-        status: 'SUBMITTED'
-    };
+            LOG.error(
+                `[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${cpiError.message}`
+            );
 
-});
+            // Update status FAILED
+            await UPDATE(ReprocessHeaders)
+                .set({
+                    reprocessStatus: 'CPI-FAILED',
+                    reprocessMessage: cpiError.message
+                })
+                .where({
+                    ID: attemptId
+                });
+
+            // OPTIONAL:
+            // Don't throw req.error here
+            // Otherwise user gets 500 and may retry unnecessarily
+        }
+
+        return {
+            attemptId,
+            status: 'SUBMITTED'
+        };
+
+    });
 
 
     this.on("getProcessInfoForIdoc", async (req) => {
@@ -436,7 +436,9 @@ module.exports = cds.service.impl(function () {
         );
 
         /* Sync FailedIdocHeaders on success */
-        if (reprocessStatus === 'RE-PROCESSED') {
+        if (idocStatus == '53') {
+            LOG.info(`[updateReprocessResult] Updated status in FailedHeaderIdoc ${idocStatus} to business status ${reprocessStatus}`);
+
             await tx.run(
                 UPDATE(FailedIdocHeaders)
                     .set({

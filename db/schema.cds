@@ -37,10 +37,10 @@ type IDocPayload {
 
 // Master/Configurable Data
 entity MessageTypesForMetadata : cuid, managed {
-  sapLandscape   : String(20) default 'S4HANA';  // ECC, S4HANA
-  systemAlias    : String(30);                    // e.g. S4_DEV, ECC_QA
-  messageType    : String(30);                    // e.g. ORDERS, MATMAS
-  idocType       : String(30);                    // e.g. ORDERS05, MATMAS05, CREMAS03
+  sapLandscape   : String(20) default 'S4HANA'; // ECC, S4HANA
+  systemAlias    : String(30); // e.g. S4_DEV, ECC_QA
+  messageType    : String(30); // e.g. ORDERS, MATMAS
+  idocType       : String(30); // e.g. ORDERS05, MATMAS05, CREMAS03
   active         : Boolean default true;
 
   metadataLoaded : Boolean default false;
@@ -48,16 +48,16 @@ entity MessageTypesForMetadata : cuid, managed {
 }
 
 entity ErrorCodes : cuid, managed {
-  errorCode   : String(10) default '51';          // IDOC Error Codes (e.g. 51, 56)
-  systemAlias : String(30);                       // e.g. S4H210, DE1200
+  errorCode   : String(10) default '51'; // IDOC Error Codes (e.g. 51, 56)
+  systemAlias : String(30); // e.g. S4H210, DE1200
   description : String(255);
   active      : Boolean default true;
 }
 
 entity SchedulerConfig : cuid, managed {
-  schedulerName : String(30) default '2';         // e.g. TRE 1, TRE 2
-  systemAlias   : String(30);                     // e.g. S4H210, DE1200
-  intervalHours : Integer;                        // Whole number only
+  schedulerName : String(30) default '2'; // e.g. TRE 1, TRE 2
+  systemAlias   : String(30); // e.g. S4H210, DE1200
+  intervalHours : Integer; // Whole number only
   active        : Boolean default true;
 }
 
@@ -90,6 +90,7 @@ entity Segments : cuid, managed {
   parent             : Association to IdocTypes;
   segmentName        : String(30);
   segmentDescription : String(255);
+  Qualf              : Boolean;
   parentSegment      : String(30);
   level              : Integer;
   repeatable         : Boolean default true;
@@ -101,7 +102,7 @@ entity Segments : cuid, managed {
                          on fields.parent = $self;
 }
 
-// entity Fields : cuid, managed, temporal { 
+// entity Fields : cuid, managed, temporal {
 entity Fields : cuid, managed {
   parent      : Association to Segments;
   fieldName   : String(30);
@@ -124,22 +125,23 @@ entity Fields : cuid, managed {
  */
 entity FailedIdocHeaders : cuid, managed {
 
-  docnum           : String(16);                  // EDIDC-DOCNUM
-  mestyp           : String(30);                  // Message Type
-  idoctp           : String(30);                  // IDoc Type
-  status           : String(2);                   // Error Status Code (e.g. 51, 56)
+  docnum           : String(16); // EDIDC-DOCNUM
+  mestyp           : String(30); // Message Type
+  idoctp           : String(30); // IDoc Type
+  status           : String(2); // Error Status Code (e.g. 51, 56)
 
-  landscape        : String(50);                  // SAP Product / Release
-  systemAlias      : String(64);                  // BTP Destination name
+  landscape        : String(50); // SAP Product / Release
+  systemAlias      : String(64); // BTP Destination name
 
   createdOn        : String(50);
   createdTime      : String(50);
-  sender           : String(30);                  // Source system
-  receiver         : String(30);                  // Destination system
+  sender           : String(30); // Source system
+  receiver         : String(30); // Destination system
 
   errorFlag        : Boolean default true;
   processingStatus : String(20) default 'Failed'; // Failed / Submitted / Successful
-  items            : Composition of many FailedIdocItems on items.parent = $self;
+  items            : Composition of many FailedIdocItems
+                       on items.parent = $self;
 }
 
 /**

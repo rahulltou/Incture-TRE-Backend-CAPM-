@@ -158,7 +158,7 @@ module.exports = function (srv) {
                 IDOCTYP_DESC: seg.IdoctypDesc,
                 MESTYP: seg.Mestyp,
                 MESTYP_DESC: seg.MestypDesc,
-
+                Qualf: seg.Qualf ?? false,
                 SEGMENT: seg.Segment,
                 SEGMENT_DESC: seg.SegDescrp ?? seg.Segment,
                 PARENT_SEGMENT: seg.ParentSegment ?? "",
@@ -355,6 +355,7 @@ module.exports = function (srv) {
                     segmentName: s.SEGMENT,
                     segmentDescription: s.SEGMENT_DESC ?? s.SEGMENT,
                     parentSegment: s.PARENT_SEGMENT ?? null,
+                    Qualf: s.Qualf ?? false,
                     ParentSegNum: s.PARENT_SEGNUM ?? null,
                     SegMustFlg: s.SEGMUSTFLG ?? false,
                     SegOccmax: s.SEGOCCMAX ?? null,

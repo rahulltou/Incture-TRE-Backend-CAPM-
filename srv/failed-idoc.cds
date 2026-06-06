@@ -23,7 +23,7 @@ service FailedIdocService {
 @Search.searchable: true
 entity FailedIdocSummary as
     select from db.FailedIdocHeaders {
-    
+
     @Search.defaultSearchElement: true
     key idoctp      as idocType,
 
@@ -41,8 +41,8 @@ entity FailedIdocSummary as
 
     count(*)        as numberOfIdocs : Integer
 }
-group by idoctp, mestyp, landscape, systemAlias, status;
-
+group by idoctp, mestyp, landscape, systemAlias, status
+order by messageType;
   /**
    * Load Failed IDOC Headers from SAP
    * Called by: scheduler (on startup + interval), admin manual trigger

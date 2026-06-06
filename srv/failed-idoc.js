@@ -142,13 +142,13 @@ module.exports = cds.service.impl(async function () {
 
           if (exists) {
             let updatePayload = {};
-            
+
             /* Only update status if changed since last sync */
             if (exists.status !== r.Status) {
               updatePayload.status = r.Status;
               updatePayload.errorFlag = validErrorCodes.has(r.Status);
             }
-            
+
             /* Backfill createdOn / createdTime if missing in DB but provided by SAP */
             if (!exists.createdOn && r.Credat) {
               updatePayload.createdOn = parseODataDate(r.Credat);
@@ -172,7 +172,7 @@ module.exports = cds.service.impl(async function () {
             idoctp: r.Idoctp,
             status: r.Status,
             landscape: r.Landscape,
-            systemAlias: sysAlias, 
+            systemAlias: sysAlias,
             createdOn: parseODataDate(r.Credat),
             createdTime: parseODataTime(r.Cretim),
             sender: r.Sndprn,
@@ -265,18 +265,54 @@ module.exports = cds.service.impl(async function () {
     }
   });
 
-  this.on('READ', 'FailedIdocSummary', async (req) => {
-    return SELECT.from(FailedIdocHeaders)
-        .columns(
-            'idoctp as idocType',
-            'status as errorStatusCode',
-            { func: 'count', args: ['*'], as: 'numberOfIdocs' }
-        )
-        .groupBy(
-            'idoctp',
-            'status'
-        );
-});
+  // this.on('READ', 'FailedIdocSummary', async (req) => {
+  //   try {
+  //     LOG.info('Fetching Failed IDOC raw data for aggregation');
+
+  //     const data = await SELECT.from(FailedIdocHeaders).columns(
+  //       'idoctp',
+  //       'mestyp',
+  //       'landscape',
+  //       'systemAlias',
+  //       'status'
+  //     );
+
+  //     LOG.info(`Raw records fetched: ${data.length}`);
+
+  //     const map = new Map();
+
+  //     for (const row of data) {
+  //       const key = `${row.idoctp}|${row.mestyp}|${row.landscape}|${row.systemAlias}|${row.status}`;
+
+  //       if (!map.has(key)) {
+  //         map.set(key, {
+  //           idocType: row.idoctp,
+  //           messageType: row.mestyp,
+  //           landscape: row.landscape,
+  //           systemAlias: row.systemAlias,
+  //           errorStatusCode: row.status,
+  //           numberOfIdocs: 0
+  //         });
+  //       }
+
+  //       map.get(key).numberOfIdocs++;
+  //     }
+
+  //     const result = Array.from(map.values())
+  //     result.sort((a, b) =>
+  //       a.messageType.localeCompare(b.messageType) ||
+  //       a.errorStatusCode.localeCompare(b.errorStatusCode)
+  //     );
+
+  //     LOG.info(`Aggregation completed. Groups: ${result.length}`);
+
+  //     return result;
+
+  //   } catch (error) {
+  //     LOG.error('Error in FailedIdocSummary READ:', error);
+  //     req.error(500, 'Failed to fetch IDOC summary');
+  //   }
+  // });
 
 });
 
