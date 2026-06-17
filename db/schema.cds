@@ -167,7 +167,7 @@ entity ReprocessHeaders : cuid, managed {
   currentStatus    : String(20); // IDOC status at submission time
   reprocessStatus  : String(20); // SUBMITTED / FAILED / RE-PROCESSED
   reprocessMessage : String(255);
-
+  toBeStatus       : String(2);
   items            : Composition of many ReprocessItems
                        on items.parent = $self;
 }

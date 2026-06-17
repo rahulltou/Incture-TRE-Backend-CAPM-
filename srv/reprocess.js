@@ -227,6 +227,8 @@ module.exports = cds.service.impl(function () {
          * Independent transaction
          */
         const tx = cds.transaction();
+        
+        const failedHeader = await tx.run(SELECT.one.from(FailedIdocHeaders).where({ docnum }));
 
         try {
 
@@ -237,7 +239,8 @@ module.exports = cds.service.impl(function () {
                     docnum,
                     changedBy,
                     changedAt: new Date(),
-                    currentStatus: CONTROL.STATUS,
+                    currentStatus: failedHeader.status,
+                    toBeStatus: CONTROL.STATUS,
                     reprocessStatus: 'SUBMITTED',
                     reprocessMessage: null
                 })
@@ -290,51 +293,63 @@ module.exports = cds.service.impl(function () {
                 `[submitReprocessAttempt] Forwarding to CPI (${systemAlias}) for attempt ${attemptId}...`
             );
 
-            // await executeHttpRequest(
-            //     {
-            //         destinationName: 'CPI_IFLOW_DEST'
-            //     },
-            //     {
-            //         method: 'POST',
-            //         url: '/http/IdocReprocessing',
-            //         data: cpiPayload,
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
+            const data = await executeHttpRequest(
+                {
+                    destinationName: 'CPI_IFLOW_DEST'
+                },
+                {
+                    method: 'POST',
+                    url: '/http/transactionReprocessing',
+                    data: cpiPayload,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            LOG.info(
+                `[submitReprocessAttempt] CPI response for attempt ${attemptId}: ${data.status} ${data.statusText} JSONDATA: ${JSON.stringify(data.data)}`
+            );
 
             LOG.info(
                 `[submitReprocessAttempt] Using axios to call CPI endpoint for attempt ${attemptId}...`
             );
 
-            // Use axios to POST to the CPI endpoint with provided credentials
-            const cpiUser = 'sb-ed386d9e-a332-4d22-b26e-6ac05814ea1d!b63626|it-rt-inccpidev!b16077';
-            const cpiPwd = 'f9677ae8-b1e2-4e09-bb2e-0f22d14236ee$FDsyqDwD8BHfW5r2yZX-SU4_ijoeOxwTSVn7eq4YCB4=';
-            const cpiEndpoint = 'https://inccpidev.it-cpi001-rt.cfapps.eu10.hana.ondemand.com/http/transactionReprocessing';
+            // // Use axios to POST to the CPI endpoint with provided credentials
+            // const cpiUser = 'sb-ed386d9e-a332-4d22-b26e-6ac05814ea1d!b63626|it-rt-inccpidev!b16077';
+            // const cpiPwd = 'f9677ae8-b1e2-4e09-bb2e-0f22d14236ee$FDsyqDwD8BHfW5r2yZX-SU4_ijoeOxwTSVn7eq4YCB4=';
+            // const cpiEndpoint = 'https://inccpidev.it-cpi001-rt.cfapps.eu10.hana.ondemand.com/http/transactionReprocessing';
 
-            await axios.post(cpiEndpoint, cpiPayload, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(`${cpiUser}:${cpiPwd}`).toString('base64')}`
-                },
-                timeout: 60000
-            });
+            // const response = await axios.post(cpiEndpoint, cpiPayload, {
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Basic ${Buffer.from(`${cpiUser}:${cpiPwd}`).toString('base64')}`
+            //     },
+            //     timeout: 60000
+            // });
+
+            // LOG.info(
+            //     `[submitReprocessAttempt] CPI response for attempt ${attemptId}: ${response.status} ${response.statusText} JSON. Data: ${JSON.stringify(response.data)}`
+            // );
 
 
             LOG.info(
                 `[submitReprocessAttempt] Successfully forwarded to CPI for attempt ${attemptId}`
             );
 
-            // Update status SUCCESS
-            await UPDATE(ReprocessHeaders)
-                .set({
-                    reprocessStatus: 'SUCCESS',
-                    reprocessMessage: 'Successfully forwarded to CPI'
-                })
-                .where({
-                    ID: attemptId
-                });
+            // Update status SUCCESS with new transaction
+            const txSuccess = cds.transaction();
+            await txSuccess.run(
+                UPDATE(ReprocessHeaders)
+                    .set({
+                        reprocessStatus: 'SUCCESS',
+                        reprocessMessage: 'Successfully forwarded to CPI'
+                    })
+                    .where({
+                        ID: attemptId
+                    })
+            );
+            await txSuccess.commit();
 
         } catch (cpiError) {
 
@@ -342,15 +357,24 @@ module.exports = cds.service.impl(function () {
                 `[submitReprocessAttempt] CPI Communication Failed for attempt ${attemptId}: ${cpiError.message}`
             );
 
-            // Update status FAILED
-            await UPDATE(ReprocessHeaders)
-                .set({
-                    reprocessStatus: 'CPI-FAILED',
-                    reprocessMessage: cpiError.message
-                })
-                .where({
-                    ID: attemptId
-                });
+            // Update status FAILED with new transaction
+            const txFailed = cds.transaction();
+
+            const failureMessage = `CPI call failed: ${cpiError.message}`;
+
+            await txFailed.run(
+                UPDATE(ReprocessHeaders)
+                    .set({
+                        reprocessStatus: 'CPI-FAILED',
+                        reprocessMessage: failureMessage
+                    })
+                    .where({
+                        ID: attemptId
+                    })
+            );
+            await txFailed.commit();
+
+            LOG.info(`[submitReprocessAttempt] Updated attempt ${attemptId} with CPI-FAILED status and message: ${failureMessage}`);
 
             // OPTIONAL:
             // Don't throw req.error here
@@ -402,54 +426,86 @@ module.exports = cds.service.impl(function () {
         const { attemptId, idocStatus, reprocessMessage } = req.data;
         const tx = cds.tx(req);
 
-        LOG.info(`[updateReprocessResult] Received callback for attempt ${attemptId} with status ${idocStatus}`);
-
-        const attempt = await tx.run(
-            SELECT.one.from(ReprocessHeaders).where({ ID: attemptId })
-        );
-
-        if (!attempt) {
-            LOG.warn(`[updateReprocessResult] Attempt ${attemptId} not found`);
-            return req.error(404, 'Reprocess attempt not found');
-        }
-
-        /* Check if status is configured as error */
-        const errorCode = await tx.run(
-            SELECT.one.from(ErrorCodes)
-                .where({ errorCode: idocStatus, active: true })
-        );
-
-        const reprocessStatus = errorCode ? 'FAILED' : 'RE-PROCESSED';
-        const currentStatus = idocStatus;
-
-        LOG.info(`[updateReprocessResult] Mapped SAP status ${idocStatus} to business status ${reprocessStatus}`);
-
-        /* Update attempt */
-        await tx.run(
-            UPDATE(ReprocessHeaders)
-                .set({
-                    currentStatus,
-                    reprocessStatus,
-                    reprocessMessage
-                })
-                .where({ ID: attemptId })
-        );
-
-        /* Sync FailedIdocHeaders on success */
-        if (idocStatus == '53') {
-            LOG.info(`[updateReprocessResult] Updated status in FailedHeaderIdoc ${idocStatus} to business status ${reprocessStatus}`);
-
-            await tx.run(
-                UPDATE(FailedIdocHeaders)
-                    .set({
-                        status: idocStatus, //'PROCESSED',
-                        errorFlag: false
-                    })
-                    .where({ docnum: attempt.docnum })
+        try {
+            LOG.info(
+                `[updateReprocessResult] Received callback for attempt ${attemptId} with status ${idocStatus}, message: ${reprocessMessage}`
             );
-        }
 
-        return { status: reprocessStatus };
+            const reprocessHeader = await tx.run(
+                SELECT.one.from(ReprocessHeaders).where({ ID: attemptId })
+            );
+
+            if (!reprocessHeader) {
+                LOG.warn(`[updateReprocessResult] Attempt ${attemptId} not found`);
+                return req.error(404, 'Reprocess attempt not found');
+            }
+
+            let reprocessStatus = 'CPI-FAILED';
+
+            if (reprocessHeader.toBeStatus === idocStatus) {
+                reprocessStatus = 'RE-PROCESSED';
+
+                LOG.info(
+                    `[updateReprocessResult] IDOC reached desired status ${idocStatus}. Marking as ${reprocessStatus}.`
+                );
+
+                await tx.run(
+                    UPDATE(ReprocessHeaders)
+                        .set({
+                            currentStatus: idocStatus,
+                            reprocessStatus,
+                            reprocessMessage: 'IDOC reached desired status'
+                        })
+                        .where({ ID: attemptId })
+                );
+
+                await tx.run(
+                    UPDATE(FailedIdocHeaders)
+                        .set({
+                            status: idocStatus,
+                            processingStatus: 'RE-PROCESSED',
+                            errorFlag: false
+                        })
+                        .where({ docnum: reprocessHeader.docnum })
+                );
+            } else {
+                LOG.info(
+                    `[updateReprocessResult] IDOC status ${idocStatus} does not match expected status ${reprocessHeader.toBeStatus}.`
+                );
+
+                const cpiMsg = `IDOC status ${idocStatus} does not match expected status ${reprocessHeader.toBeStatus}`;
+
+                await tx.run(
+                    UPDATE(ReprocessHeaders)
+                        .set({
+                            reprocessStatus,
+                            reprocessMessage: cpiMsg
+                        })
+                        .where({ ID: attemptId })
+                );
+
+                LOG.info(`[updateReprocessResult] Set reprocessMessage to: ${cpiMsg}`);
+            }
+
+            // Commit the transaction to persist changes
+            await tx.commit();
+
+            LOG.info(`[updateReprocessResult] Transaction committed for attempt ${attemptId}`);
+
+            LOG.info(
+                `[updateReprocessResult] Updated attempt ${attemptId} with business status ${reprocessStatus}`
+            );
+
+            return {
+                status: reprocessStatus
+            };
+        } catch (error) {
+            LOG.error(
+                `[updateReprocessResult] Error processing attempt ${attemptId}: ${error.message}`
+            );
+            await tx.rollback(error);
+            return req.error(500, error.message);
+        }
     });
 
 
