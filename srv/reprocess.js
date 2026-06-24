@@ -1,7 +1,7 @@
 const cds = require('@sap/cds');
 const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 const axios = require('axios');
-const { SELECT } = cds.ql;
+const { SELECT, UPDATE, INSERT } = cds.ql;
 const LOG = cds.log('reprocess');
 
 module.exports = cds.service.impl(function () {
@@ -10,8 +10,69 @@ module.exports = cds.service.impl(function () {
         ReprocessHeaders,
         ReprocessItems,
         FailedIdocHeaders,
-        ErrorCodes
+        ErrorCodes,
+        ChangeLogBackups,
+        ChangeLogBackupItems
     } = cds.entities('ZTR_Backend_1');
+
+    /**
+     * Internal backup creation helper
+     * Automatically creates backup when reprocess is submitted
+     */
+    async function createInternalBackup(docnum, mestyp, idoctp, initialStatus, changedStatus, changedBy, systemAlias, landscape, changes) {
+        try {
+            LOG.info(`[createInternalBackup] Creating backup for docnum ${docnum} with ${changes.length} changes`);
+
+            const backupId = cds.utils.uuid();
+            const processDescription = changes.length > 0
+                ? `Reprocessed ${changes.length} field(s): ${changes.map(c => `${c.segment}.${c.field}`).join(', ')}`
+                : 'Reprocessing backup';
+
+            const tx = cds.transaction();
+
+            // Insert backup header
+            await tx.run(
+                INSERT.into(ChangeLogBackups).entries({
+                    ID: backupId,
+                    docnum,
+                    mestyp,
+                    idoctp,
+                    initialStatus,
+                    changedStatus,
+                    changedBy,
+                    changedAt: new Date(),
+                    systemAlias,
+                    landscape,
+                    processDescription,
+                    backupStatus: 'ARCHIVED',
+                    archivedAt: new Date()
+                })
+            );
+
+            // Insert backup items
+            for (let idx = 0; idx < changes.length; idx++) {
+                const change = changes[idx];
+                await tx.run(
+                    INSERT.into(ChangeLogBackupItems).entries({
+                        parent_ID: backupId,
+                        segment: change.segment,
+                        field: change.field,
+                        oldValue: change.oldValue,
+                        newValue: change.newValue,
+                        lineNo: idx + 1
+                    })
+                );
+            }
+
+            await tx.commit();
+            LOG.info(`[createInternalBackup] Backup created successfully with ID: ${backupId}`);
+            return { success: true, backupId };
+
+        } catch (backupError) {
+            LOG.warn(`[createInternalBackup] Backup creation failed (non-critical): ${backupError.message}`);
+            return { success: false, error: backupError.message };
+        }
+    }
 
     /**
      * Submit reprocessing attempt
@@ -227,7 +288,7 @@ module.exports = cds.service.impl(function () {
          * Independent transaction
          */
         const tx = cds.transaction();
-        
+
         const failedHeader = await tx.run(SELECT.one.from(FailedIdocHeaders).where({ docnum }));
 
         try {
@@ -267,6 +328,32 @@ module.exports = cds.service.impl(function () {
             LOG.info(
                 `[submitReprocessAttempt] DB records saved successfully for attempt ${attemptId}`
             );
+
+            /*
+             * STEP 1.5
+             * Create internal backup asynchronously (fire and forget)
+             * Non-blocking: doesn't delay API response
+             */
+            cds.spawn(async () => {
+                try {
+                    const backupResult = await createInternalBackup(
+                        docnum,
+                        CONTROL.MESTYP,
+                        CONTROL.IDOCTYP,
+                        failedHeader.status,
+                        CONTROL.STATUS,
+                        changedBy,
+                        systemAlias,
+                        failedHeader.landscape,
+                        changes
+                    );
+                    if (backupResult.success) {
+                        LOG.info(`[submitReprocessAttempt] Internal backup created: ${backupResult.backupId}`);
+                    }
+                } catch (backupSpawnError) {
+                    LOG.error(`[submitReprocessAttempt] Backup spawn failed: ${backupSpawnError.message}`);
+                }
+            });
 
         } catch (dbError) {
 
@@ -468,6 +555,45 @@ module.exports = cds.service.impl(function () {
                         })
                         .where({ docnum: reprocessHeader.docnum })
                 );
+
+                // Get failed IDOC record for backup
+                const failedIdocRecord = await tx.run(
+                    SELECT.one.from(FailedIdocHeaders)
+                        .where({ docnum: reprocessHeader.docnum })
+                );
+
+                // Get all reprocess items for backup
+                const reprocessItems = await tx.run(
+                    SELECT.from(ReprocessItems)
+                        .where({ parent_ID: attemptId })
+                );
+
+                // Create completion backup asynchronously (non-blocking)
+                cds.spawn(async () => {
+                    try {
+                        const completionBackup = await createInternalBackup(
+                            reprocessHeader.docnum,
+                            failedIdocRecord?.mestyp || 'UNKNOWN',
+                            failedIdocRecord?.idoctp || 'UNKNOWN',
+                            reprocessHeader.currentStatus,
+                            idocStatus,
+                            reprocessHeader.changedBy,
+                            failedIdocRecord?.systemAlias || 'UNKNOWN',
+                            failedIdocRecord?.landscape || 'UNKNOWN',
+                            reprocessItems.map(item => ({
+                                segment: item.segment,
+                                field: item.field,
+                                oldValue: item.oldValue,
+                                newValue: item.newValue
+                            }))
+                        );
+                        if (completionBackup.success) {
+                            LOG.info(`[updateReprocessResult] Completion backup created: ${completionBackup.backupId}`);
+                        }
+                    } catch (completionBackupError) {
+                        LOG.error(`[updateReprocessResult] Completion backup failed: ${completionBackupError.message}`);
+                    }
+                });
             } else {
                 LOG.info(
                     `[updateReprocessResult] IDOC status ${idocStatus} does not match expected status ${reprocessHeader.toBeStatus}.`

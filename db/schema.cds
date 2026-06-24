@@ -180,3 +180,40 @@ entity ReprocessItems : cuid, managed {
   oldValue : String(255);
   newValue : String(255);
 }
+
+/**
+ * Change Log Backup Headers
+ * Tracks IDOC change log backups to DMS/CMS
+ */
+entity ChangeLogBackups : cuid, managed {
+  docnum             : String(16);
+  mestyp             : String(30);
+  idoctp             : String(30);
+  initialStatus      : String(2);
+  changedStatus      : String(2);
+  changedBy          : String(50);
+  changedAt          : Timestamp;
+  systemAlias        : String(30);
+  landscape          : String(50);
+  processDescription : String(500);
+  backupStatus       : String(20) default 'PENDING'; // PENDING / ARCHIVED / FAILED
+  dmsRefId           : String(100);
+  dmsFileName        : String(200);
+  backupUrl          : String(500);
+  archivedAt         : Timestamp;
+  items              : Composition of many ChangeLogBackupItems
+                         on items.parent = $self;
+}
+
+/**
+ * Change Log Backup Items
+ * Detailed field changes for each backup
+ */
+entity ChangeLogBackupItems : cuid, managed {
+  parent   : Association to ChangeLogBackups;
+  segment  : String(30);
+  field    : String(30);
+  oldValue : String(255);
+  newValue : String(255);
+  lineNo   : Integer;
+}
