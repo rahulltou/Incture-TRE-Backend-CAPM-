@@ -1,2 +1,6 @@
 {
+    "chat.tools.terminal.autoApprove": {
+        "mbt": true,
+        "cf8": true
+    }
 }

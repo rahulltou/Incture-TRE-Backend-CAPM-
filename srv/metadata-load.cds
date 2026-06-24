@@ -10,25 +10,41 @@ service tRE_Metadata {
        ======================================================= */
 
   @readonly
-  //   @odata.draft.enabled: false
-  //   @cds.persistence.skip
-  @cds.temporal: false
-  @requires: ['TRE.CONFIG.ADMIN', 'TRE.EXECUTION.EXECUTE']
+  @odata.draft.enabled: false
+  @cds.persistence.skip
+  @cds.temporal       : false
+  @Search.searchable  : true
+  @requires           : [
+    'TRE.CONFIG.ADMIN',
+    'TRE.EXECUTION.EXECUTE'
+  ]
   entity MessageTypes as projection on my.MessageTypes;
 
   @readonly
-  @cds.temporal: false
-  @requires: ['TRE.CONFIG.ADMIN', 'TRE.EXECUTION.EXECUTE']
+  @cds.temporal     : false
+  @Search.searchable: true
+  @requires         : [
+    'TRE.CONFIG.ADMIN',
+    'TRE.EXECUTION.EXECUTE'
+  ]
   entity IdocTypes    as projection on my.IdocTypes;
 
   @readonly
-  @cds.temporal: false
-  @requires: ['TRE.CONFIG.ADMIN', 'TRE.EXECUTION.EXECUTE']
+  @cds.temporal     : false
+  @Search.searchable: true
+  @requires         : [
+    'TRE.CONFIG.ADMIN',
+    'TRE.EXECUTION.EXECUTE'
+  ]
   entity Segments     as projection on my.Segments;
 
   @readonly
-  @cds.temporal: false
-  @requires: ['TRE.CONFIG.ADMIN', 'TRE.EXECUTION.EXECUTE']
+  @cds.temporal     : false
+  @Search.searchable: true
+  @requires         : [
+    'TRE.CONFIG.ADMIN',
+    'TRE.EXECUTION.EXECUTE'
+  ]
   entity Fields       as projection on my.Fields;
 
 // /**

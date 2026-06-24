@@ -2,12 +2,15 @@ _schema-version: 3.3.0
 ID: ZTRE_Backend_1
 description: A simple CAP project.
 version: 1.0.1
+ 
 modules:
+ 
 - name: ZTRE_Backend_1-db-deployer
   type: hdb
   path: gen/db
   requires:
   - name: ZTRE_Backend_1-db
+ 
 - name: ZTRE_Backend_1-srv
   type: nodejs
   path: gen/srv
@@ -16,8 +19,6 @@ modules:
   - name: ZTRE_Backend_1-db
   - name: ZTRE_Backend_1-connectivity
   - name: ZTRE_Backend_1-destination
-  # - name: ZTRE_Backend_1-logging
-  # - name: ZTRE_Backend_1-auditlog
   provides:
   - name: srv-api
     properties:
@@ -27,62 +28,64 @@ modules:
     instances: 1
   build-parameters:
     builder: npm-ci
-- name: ZTRE_Backend_1
-  type: approuter.nodejs
-  path: app/router
-  requires:
-  - name: srv-api
-    group: destinations
-    properties:
-      forwardAuthToken: true
-      name: srv-api
-      url: ~{srv-url}
-  - name: ZTRE_Backend_1-auth
-  - name: ZTRE_Backend_1-destination
-  - name: ZTRE_Backend_1-html5-runtime
-  # - name: ZTRE_Backend_1-logging
-  provides:
-  - name: app-api
-    properties:
-      app-protocol: ${protocol}
-      app-uri: ${default-uri}
-  parameters:
-    disk-quota: 256M
-    keep-existing-routes: true
-    memory: 256M
+ 
 - name: ZTRE_Backend_1-app-deployer
   type: com.sap.application.content
   path: gen
   requires:
-  - name: ZTRE_Backend_1-auth
-  - name: srv-api
   - name: ZTRE_Backend_1-html5-repo-host
     parameters:
-      config:
-        HTML5Runtime_enabled: true
       content-target: true
   build-parameters:
     build-result: app/
     requires:
     - artifacts:
-      - nstremastermessagetremastermessagetype.zip
-      name: nstremastermessagetremastermessagetype
+      - cominctremastermessagetype.zip
+      name: cominctremastermessagetype
       target-path: app/
     - artifacts:
-      - nstremasterinbidocerrcodestremasterinbidocerrcodes.zip
-      name: nstremasterinbidocerrcodestremasterinbidocerrcodes
+      - cominctremasterinbidocerrcodes.zip
+      name: cominctremasterinbidocerrcodes
       target-path: app/
     - artifacts:
-      - nstremasterschedulertremasterscheduler.zip
-      name: nstremasterschedulertremasterscheduler
+      - cominctremasterscheduler.zip
+      name: cominctremasterscheduler
       target-path: app/
-    - artifacts:
-      - nstremastermessagestremastermessagetypes.zip
-      name: nstremastermessagestremastermessagetypes
-      target-path: app/
-- name: nstremastermessagetremastermessagetype
+ 
+- name: ZTRE_Backend_1-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: ZTRE_Backend_1-destination
+    parameters:
+      content-target: true
+  - name: ZTRE_Backend_1-html5-repo-host
+    parameters:
+      service-key:
+        name: ZTRE_Backend_1-html5-repo-host-key
+  - name: ZTRE_Backend_1-auth
+    parameters:
+      service-key:
+        name: ZTRE_Backend_1-auth-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: ZTRE_Backend_1_html5_repo_host
+          ServiceInstanceName: ZTRE_Backend_1-html5-repo-host
+          ServiceKeyName: ZTRE_Backend_1-html5-repo-host-key
+          sap.cloud.service: ztre.service
+        - Authentication: OAuth2UserTokenExchange
+          Name: ZTRE_Backend_1_auth
+          ServiceInstanceName: ZTRE_Backend_1-auth
+          ServiceKeyName: ZTRE_Backend_1-auth-key
+          sap.cloud.service: ztre.service
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+ 
+- name: cominctremastermessagetype
   type: html5
-  path: app/tre_master_message_type
+  path: app/tremastermessagetype
   build-parameters:
     build-result: dist
     builder: custom
@@ -90,9 +93,10 @@ modules:
     - npm install
     - npm run build:cf
     supported-platforms: []
-- name: nstremasterinbidocerrcodestremasterinbidocerrcodes
+ 
+- name: cominctremasterinbidocerrcodes
   type: html5
-  path: app/tre_master_inb_idoc_errcodes
+  path: app/tremasterinbidocerrcodes
   build-parameters:
     build-result: dist
     builder: custom
@@ -100,9 +104,10 @@ modules:
     - npm install
     - npm run build:cf
     supported-platforms: []
-- name: nstremasterschedulertremasterscheduler
+ 
+- name: cominctremasterscheduler
   type: html5
-  path: app/tre_master_scheduler
+  path: app/tremasterscheduler
   build-parameters:
     build-result: dist
     builder: custom
@@ -110,49 +115,44 @@ modules:
     - npm install
     - npm run build:cf
     supported-platforms: []
-- name: nstremastermessagestremastermessagetypes
-  type: html5
-  path: app/tre_master_message_type
-  build-parameters:
-    build-result: dist
-    builder: custom
-    commands:
-    - npm install
-    - npm run build:cf
-    supported-platforms: []    
+ 
 resources:
+ 
 - name: ZTRE_Backend_1-auth
   type: org.cloudfoundry.managed-service
   parameters:
+    service: xsuaa
+    service-plan: application
+    path: ./xs-security.json
     config:
+      xsappname: ZTRE_Backend_1-${org}-${space}
+      tenant-mode: dedicated
       oauth2-configuration:
         credential-types:
         - binding-secret
         - x509
         redirect-uris:
-        - https://*~{app-api/app-uri}/**
-      tenant-mode: dedicated
-      xsappname: ZTRE_Backend_1-${org}-${space}
-    path: ./xs-security.json
-    service: xsuaa
-    service-plan: application
-  requires:
-  - name: app-api
+        - https://*.hana.ondemand.com/**
+ 
 - name: ZTRE_Backend_1-db
   type: org.cloudfoundry.managed-service
   parameters:
     service: hana
     service-plan: hdi-shared
+ 
 - name: ZTRE_Backend_1-connectivity
   type: org.cloudfoundry.managed-service
   parameters:
     service: connectivity
     service-plan: lite
+ 
 - name: ZTRE_Backend_1-destination
   type: org.cloudfoundry.managed-service
   parameters:
+    service: destination
+    service-plan: lite
     config:
-      HTML5Runtime_enabled: false
+      HTML5Runtime_enabled: true
       init_data:
         instance:
           destinations:
@@ -161,35 +161,35 @@ resources:
             ProxyType: Internet
             Type: HTTP
             URL: https://ui5.sap.com
+          - Authentication: NoAuthentication
+            Name: ZTRE_Backend_1-srv-api
+            ProxyType: Internet
+            Type: HTTP
+            URL: ~{srv-api/srv-url}
+            HTML5.DynamicDestination: true
+            HTML5.ForwardAuthToken: true
           existing_destinations_policy: update
-    service: destination
-    service-plan: lite
+  requires:
+  - name: srv-api
+ 
 - name: ZTRE_Backend_1-html5-repo-host
   type: org.cloudfoundry.managed-service
   parameters:
     service: html5-apps-repo
     service-plan: app-host
+ 
 - name: ZTRE_Backend_1-html5-runtime
   type: org.cloudfoundry.managed-service
   parameters:
     service: html5-apps-repo
     service-plan: app-runtime
-# - name: ZTRE_Backend_1-logging
-#   type: org.cloudfoundry.managed-service
-#   parameters:
-#     service: application-logs
-#     service-plan: standard
-# - name: ZTRE_Backend_1-auditlog
-#   type: org.cloudfoundry.managed-service
-#   parameters:
-#     service: auditlog
-#     service-plan: premium
+ 
 parameters:
   deploy_mode: html5-repo
   enable-parallel-deployments: true
+ 
 build-parameters:
   before-all:
   - builder: custom
     commands:
-    - npm ci
     - npx cds build --production

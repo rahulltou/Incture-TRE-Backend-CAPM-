@@ -37,27 +37,26 @@ type IDocPayload {
 
 // Master/Configurable Data
 entity MessageTypesForMetadata : cuid, managed {
-  // sapLandscape : String(20);     // ECC, S4HANA
-  sapLandscape   : String(20) default 'S4HANA';
+  sapLandscape   : String(20) default 'S4HANA'; // ECC, S4HANA
   systemAlias    : String(30); // e.g. S4_DEV, ECC_QA
-  messageType    : String(30);
+  messageType    : String(30); // e.g. ORDERS, MATMAS
+  idocType       : String(30); // e.g. ORDERS05, MATMAS05, CREMAS03
   active         : Boolean default true;
-
 
   metadataLoaded : Boolean default false;
   lastLoadedAt   : Timestamp;
 }
 
 entity ErrorCodes : cuid, managed {
-  // errorCode    : String(10); // IDOC Error Codes
-  errorCode   : String(10) default '51';
+  errorCode   : String(10) default '51'; // IDOC Error Codes (e.g. 51, 56)
+  systemAlias : String(30); // e.g. S4H210, DE1200
   description : String(255);
   active      : Boolean default true;
 }
 
 entity SchedulerConfig : cuid, managed {
-  // schedulerName : String(30);   // e.g. Scheduler_1
-  schedulerName : String(30) default '2';
+  schedulerName : String(30) default '2'; // e.g. TRE 1, TRE 2
+  systemAlias   : String(30); // e.g. S4H210, DE1200
   intervalHours : Integer; // Whole number only
   active        : Boolean default true;
 }
@@ -91,6 +90,7 @@ entity Segments : cuid, managed {
   parent             : Association to IdocTypes;
   segmentName        : String(30);
   segmentDescription : String(255);
+  Qualf              : Boolean;
   parentSegment      : String(30);
   level              : Integer;
   repeatable         : Boolean default true;
@@ -125,20 +125,38 @@ entity Fields : cuid, managed {
  */
 entity FailedIdocHeaders : cuid, managed {
 
-  docnum      : String(16); // EDIDC-DOCNUM
-  mestyp      : String(30); // Message Type
-  idoctp      : String(30); // IDoc Type
-  status      : String(2); // Status (e.g. 51)
+  docnum           : String(16); // EDIDC-DOCNUM
+  mestyp           : String(30); // Message Type
+  idoctp           : String(30); // IDoc Type
+  status           : String(2); // Error Status Code (e.g. 51, 56)
 
-  landscape   : String(50); // SAP Product / Release (ECC / S4OP2021 / S4C)
-  systemAlias : String(16); // BTP Destinations for SAP systems
+  landscape        : String(50); // SAP Product / Release
+  systemAlias      : String(64); // BTP Destination name
 
-  createdOn   : Date;
-  createdTime : Time;
-  sender      : String(30);
-  receiver    : String(30);
+  createdOn        : String(50);
+  createdTime      : String(50);
+  sender           : String(30); // Source system
+  receiver         : String(30); // Destination system
 
-  errorFlag   : Boolean default true;
+  errorFlag        : Boolean default true;
+  processingStatus : String(20) default 'Failed'; // Failed / Submitted / Successful
+  items            : Composition of many FailedIdocItems
+                       on items.parent = $self;
+}
+
+/**
+ * Failed IDoc Segment Data (EDIDD)
+ * Persisted to avoid making external calls when viewing IDoc details
+ */
+entity FailedIdocItems : cuid, managed {
+  parent : Association to FailedIdocHeaders;
+  docnum : String(16);
+  segnum : String(6);
+  segnam : String(27);
+  psgnum : String(6);
+  hlevel : String(2);
+  status : String(2);
+  sdata  : String(1000);
 }
 
 entity ReprocessHeaders : cuid, managed {
@@ -149,7 +167,7 @@ entity ReprocessHeaders : cuid, managed {
   currentStatus    : String(20); // IDOC status at submission time
   reprocessStatus  : String(20); // SUBMITTED / FAILED / RE-PROCESSED
   reprocessMessage : String(255);
-
+  toBeStatus       : String(2);
   items            : Composition of many ReprocessItems
                        on items.parent = $self;
 }

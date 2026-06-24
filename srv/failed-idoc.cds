@@ -1,43 +1,74 @@
 using {ZTR_Backend_1 as db} from '../db/schema.cds';
-using {Corrected_Error_EDIDC as ext} from './external/Corrected_Error_EDIDC.csn';
 
-@path: '/service/zTR_Backend_1/failed-idoc'
+@path    : '/service/zTR_Backend_1/failed-idoc'
 @requires: 'TRE.EXECUTION.EXECUTE'
 service FailedIdocService {
 
   /**
    * Persisted Failed IDOCs (Header)
-   * Used by UI & APIs
+   * Read by UI & external APIs — detail/list view
    */
   @readonly
+  @cds.redirection.target
   entity FailedIdocHeaders as projection on db.FailedIdocHeaders;
 
+  @readonly
+  entity FailedIdocItems   as projection on db.FailedIdocItems;
+
   /**
-   * External EDIDC (typed)
-   * Used internally by CAP for loading
+   * IDoc Correction Dashboard — grouped summary view
+   * Aggregates failed IDocs by IDoc Type, Message Type, System Alias, Error Status Code
    */
   @readonly
-  @cds.persistence.skip
-  entity EDIDCExternal     as
-    projection on ext.EDIDCSet {
-      key Docnum,
-          Landscape,
-          SysAlias,
-          Mestyp,
-          Idoctp,
-          Status,
-          Credat,
-          Cretim,
-          Sndprn,
-          Rcvprn
-    };
+  @Search.searchable: true
+  entity FailedIdocSummary as
+    select from db.FailedIdocHeaders {
+
+          @Search.defaultSearchElement: true
+      key idoctp      as idocType,
+
+          @Search.defaultSearchElement: true
+      key mestyp      as messageType,
+
+          @Search.defaultSearchElement: true
+      key landscape,
+
+          @Search.defaultSearchElement: true
+      key systemAlias as systemAlias,
+
+          @Search.defaultSearchElement: true
+      key status      as errorStatusCode,
+
+          count( * )  as numberOfIdocs : Integer
+    }
+    group by
+      idoctp,
+      mestyp,
+      landscape,
+      systemAlias,
+      status
+    order by
+      messageType;
 
   /**
    * Load Failed IDOC Headers from SAP
-   * Scheduler + Admin trigger
+   * Called by: scheduler (on startup + interval), admin manual trigger
+   * Reads: MessageTypesForMetadata + ErrorCodes config
+   * Writes: FailedIdocHeaders (upsert)
    */
-  action loadFailedIdocHeaders() returns {
+  action   loadFailedIdocHeaders()                          returns {
     loaded : Integer;
     status : String;
   };
+
+  /**
+   * Fetch IDoc segment data (EDIDD) from SAP for a specific IDoc
+   * Used by the "View IDoc Data" screen
+   */
+  action   getIdocData(docnum: String, systemAlias: String) returns String; // returns JSON string of segments
+
+  /**
+   * Get all segments for a specific IDoc using only docnum
+   */
+  function getSegmentsForIdoc(docnum: String)               returns many FailedIdocItems;
 }

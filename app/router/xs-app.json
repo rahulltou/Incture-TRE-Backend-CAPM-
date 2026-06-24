@@ -13,10 +13,12 @@
     },
     {
       "source": "^/(.*)$",
-      "target": "$1",
-      "destination": "srv-api",
-      "csrfProtection": true
+      "target": "/$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
     }
   ],
-  "welcomeFile": "/nstremastermessagetremastermessagetype"
+  "welcomeFile": "/nstremastermessagetremastermessagetype/index.html",
+  "authenticationMethod": "route",
+  "sessionTimeout": 15
 }
