@@ -24,6 +24,7 @@ module.exports = function (srv) {
 
         /* 1: Get configuration row — CAP 9 auto-tx, no cds.tx(req) needed */
         const admin = await SELECT.one.from(MessageTypesForMetadata).where({ ID });
+        LOG.info(`[loadMetadata] loadMetadata called for ID: ${ID}, messageType: ${admin?.messageType}, systemAlias: ${admin?.systemAlias}`);
 
         if (!admin) return req.error(404, "Configuration record not found");
 

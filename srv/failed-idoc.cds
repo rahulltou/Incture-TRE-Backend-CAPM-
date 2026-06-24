@@ -1,7 +1,7 @@
 using {ZTR_Backend_1 as db} from '../db/schema.cds';
 
-@path: '/service/zTR_Backend_1/failed-idoc'
-// @requires: 'TRE.EXECUTION.EXECUTE'   ← uncomment to restrict to authenticated users with this role
+@path    : '/service/zTR_Backend_1/failed-idoc'
+@requires: 'TRE.EXECUTION.EXECUTE'
 service FailedIdocService {
 
   /**
@@ -13,43 +13,50 @@ service FailedIdocService {
   entity FailedIdocHeaders as projection on db.FailedIdocHeaders;
 
   @readonly
-  entity FailedIdocItems as projection on db.FailedIdocItems;
+  entity FailedIdocItems   as projection on db.FailedIdocItems;
 
   /**
    * IDoc Correction Dashboard — grouped summary view
    * Aggregates failed IDocs by IDoc Type, Message Type, System Alias, Error Status Code
    */
-@readonly
-@Search.searchable: true
-entity FailedIdocSummary as
+  @readonly
+  @Search.searchable: true
+  entity FailedIdocSummary as
     select from db.FailedIdocHeaders {
 
-    @Search.defaultSearchElement: true
-    key idoctp      as idocType,
+          @Search.defaultSearchElement: true
+      key idoctp      as idocType,
 
-    @Search.defaultSearchElement: true
-    key mestyp      as messageType,
+          @Search.defaultSearchElement: true
+      key mestyp      as messageType,
 
-    @Search.defaultSearchElement: true
-    key landscape,
+          @Search.defaultSearchElement: true
+      key landscape,
 
-    @Search.defaultSearchElement: true
-    key systemAlias as systemAlias,
+          @Search.defaultSearchElement: true
+      key systemAlias as systemAlias,
 
-    @Search.defaultSearchElement: true
-    key status      as errorStatusCode,
+          @Search.defaultSearchElement: true
+      key status      as errorStatusCode,
 
-    count(*)        as numberOfIdocs : Integer
-}
-group by idoctp, mestyp, landscape, systemAlias, status
-order by messageType;
+          count( * )  as numberOfIdocs : Integer
+    }
+    group by
+      idoctp,
+      mestyp,
+      landscape,
+      systemAlias,
+      status
+    order by
+      messageType;
+
   /**
    * Load Failed IDOC Headers from SAP
    * Called by: scheduler (on startup + interval), admin manual trigger
    * Reads: MessageTypesForMetadata + ErrorCodes config
    * Writes: FailedIdocHeaders (upsert)
    */
-  action loadFailedIdocHeaders() returns {
+  action   loadFailedIdocHeaders()                          returns {
     loaded : Integer;
     status : String;
   };
@@ -58,10 +65,10 @@ order by messageType;
    * Fetch IDoc segment data (EDIDD) from SAP for a specific IDoc
    * Used by the "View IDoc Data" screen
    */
-  action getIdocData(docnum: String, systemAlias: String) returns String; // returns JSON string of segments
+  action   getIdocData(docnum: String, systemAlias: String) returns String; // returns JSON string of segments
 
   /**
    * Get all segments for a specific IDoc using only docnum
    */
-  function getSegmentsForIdoc(docnum: String) returns many FailedIdocItems;
+  function getSegmentsForIdoc(docnum: String)               returns many FailedIdocItems;
 }

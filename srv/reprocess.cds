@@ -1,8 +1,8 @@
 using {ZTR_Backend_1 as db} from '../db/schema.cds';
 
 /* ---------- Reprocess Service ---------- */
-@path: '/service/zTR_Backend_1/reprocess'
-// @requires: 'TRE.EXECUTION.EXECUTE'
+@path    : '/service/zTR_Backend_1/reprocess'
+@requires: 'TRE.EXECUTION.EXECUTE'
 service ReprocessService {
 
   /* Read-only history for UI */
@@ -29,9 +29,7 @@ service ReprocessService {
   };
 
 
-
-
-function getProcessInfoForIdoc(docnum : String) returns many ProcessInfo;
+  function getProcessInfoForIdoc(docnum: String)           returns many ProcessInfo;
 
   /* CPI callback */
   action   updateReprocessResult(attemptId: UUID,
@@ -58,11 +56,11 @@ function getProcessInfoForIdoc(docnum : String) returns many ProcessInfo;
 }
 
 
- type ProcessInfo {
-    segment      : String;
-    field        : String;
-    oldValue     : String;
-    newValue     : String;
-    modifiedDate : Timestamp;
-    modifiedBy   : String;
+type ProcessInfo {
+  segment      : String;
+  field        : String;
+  oldValue     : String;
+  newValue     : String;
+  modifiedDate : Timestamp;
+  modifiedBy   : String;
 }
